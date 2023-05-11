@@ -19,7 +19,7 @@ public class Client {
         CsvHandler csvHandler = new CsvHandler(filePath);
         csvHandler.generateFile();
         boolean firstResponseSent = false;
-        
+
         System.out.println("Procesador " + clientSpecs.processorModel);
         System.out.println("Velocidad procesador " + clientSpecs.processorSpeed);
         System.out.println("Nucleos " + clientSpecs.numCores);
