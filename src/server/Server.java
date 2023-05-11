@@ -2,6 +2,7 @@ package server;
 
 import csvhandler.CsvHandler;
 import org.jfree.data.category.DefaultCategoryDataset;
+import visuals.DynamicTable;
 import visuals.LineChart;
 
 import java.io.*;
@@ -99,8 +100,21 @@ public class Server {
 
                 }
 
+                DynamicTable dTable = new DynamicTable();
+
+                dTable.columns.addColumn("Host");
+                dTable.columns.addColumn("Procesador");
+                dTable.columns.addColumn("Velocidad de Procesador");
+                dTable.columns.addColumn("# Nucleos");
+                dTable.columns.addColumn("Uso de procesador");
+                dTable.columns.addColumn("Capacidad de disco");
+                dTable.columns.addColumn("Uso de RAM");
+                dTable.columns.addColumn("OS");
+                dTable.columns.addColumn("Rank");
+
+
                 LineChart lChart = new LineChart(
-                        "Tarea 03 - SDyP - Equipo #8",
+                        "Tarea 05 - SDyP - Equipo #8",
                         "Number of threads",
                         "Threads time (Nanoseconds)",
                         dataset,

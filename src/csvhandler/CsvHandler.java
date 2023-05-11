@@ -46,7 +46,7 @@ public class CsvHandler {
         Random rnd = new Random();
 
         for (int currentString = 0; currentString < sizeOfCSV; currentString++){
-            stringArray[currentString] = Integer.toString(rnd.nextInt(0, 100));
+            stringArray[currentString] = Integer.toString(rnd.nextInt(101));
         }
 
         String joinedString = String.join(", ", stringArray);
