@@ -1,6 +1,8 @@
 package client;
 
-import csvhandler.CsvHandler;
+import shared.CsvHandler;
+import shared.ClientConnection;
+import shared.HostSpecs;
 import visuals.DynamicTable;
 
 import java.io.*;
@@ -11,45 +13,48 @@ public class Client {
     private static final int PORT = 5555;
     private static final String SERVER_NAME = "localhost";
 
-    private static HostSpecs clientSpecs;
+//    private static HostSpecs clientSpecs;
+    private static Socket socket;
 
-    public static void main(String[] args) {
-        clientSpecs = new HostSpecs();
+    public static void main(String[] args) throws IOException {
+//        clientSpecs = new HostSpecs();
         String filePath = "src/client/randomNumbers.csv";
         CsvHandler csvHandler = new CsvHandler(filePath);
         csvHandler.generateFile();
-        boolean firstResponseSent = false;
 
-        System.out.println("Procesador " + clientSpecs.processorModel);
-        System.out.println("Velocidad procesador " + clientSpecs.processorSpeed);
-        System.out.println("Nucleos " + clientSpecs.numCores);
-        System.out.println("Uso de procesador " + clientSpecs.processorUsage);
-        System.out.println("Capacidad de disco " + clientSpecs.diskCapacity);
-        for (HostSpecs.Disk dis: clientSpecs.disks) {
-            System.out.println("" + dis.name);
-            System.out.println("" + dis.freeSpace);
-            System.out.println("" + dis.size);
-            System.out.println("" + dis.usage);
-        }
-        System.out.println("RAM Usada " + clientSpecs.RAMUsed);
-        System.out.println("OS " + clientSpecs.osVersion);
-
-        try (Socket socket = new Socket(SERVER_NAME, PORT)) {
-            OutputStream outputStream = socket.getOutputStream();
+        try {
+            socket = new Socket(SERVER_NAME, PORT);
+            ObjectOutputStream objOutputStream = new ObjectOutputStream(socket.getOutputStream());
             byte[] fileBytes = getBase64EncodedFile(filePath);
-            outputStream.write(fileBytes);
-            outputStream.flush();
 
-            firstResponseSent = true;
+            while(true){
+                ClientConnection clientConnection = new ClientConnection(fileBytes);
+                clientConnection.ipAddress = socket.getInetAddress().getHostAddress();
+                clientConnection.rank = 2.0d;
+                clientConnection.getCurrentUsage();
 
+                if(!clientConnection.firstConnection){
+                    clientConnection.fileBytes = null;
+                }
+
+                System.out.println("RAM used: "+clientConnection.RAMUsed);
+                System.out.println("Timer " + clientConnection.timer);
+
+
+                objOutputStream.writeObject(clientConnection);
+
+                System.out.println("Object sent");
+                System.out.println(socket.isConnected());
+                objOutputStream.flush();
+
+                Thread.sleep(2000);
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-
-
     }
-
-
 
     private static byte[] getBase64EncodedFile(String filePath) throws IOException {
         File file = new File(filePath);

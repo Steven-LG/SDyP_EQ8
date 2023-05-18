@@ -1,4 +1,4 @@
-package client;
+package shared;
 
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
@@ -7,25 +7,27 @@ import oshi.hardware.HWDiskStore;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OperatingSystem;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class HostSpecs {
-    public final SystemInfo systemInfo = new SystemInfo();
-    public final HardwareAbstractionLayer hardware = systemInfo.getHardware();
-    public final CentralProcessor processor = hardware.getProcessor();
+public class HostSpecs implements Serializable {
+    public transient final SystemInfo systemInfo = new SystemInfo();
+    public transient final HardwareAbstractionLayer hardware = systemInfo.getHardware();
+    public transient final CentralProcessor processor = hardware.getProcessor();
     public String processorModel;
     public double processorSpeed;
     public int numCores;
     public long diskCapacity;
 
-    private HWDiskStore[] diskStores;
+    private transient HWDiskStore[] diskStores;
 
     public String osVersion;
 
     public double processorUsage;
 
-    public List<Disk> disks;
+    public transient List<Disk> disks;
 
     public long totalRAM;
 
@@ -50,7 +52,7 @@ public class HostSpecs {
         HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
         diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
     }
-    private void getCurrentUsage(){
+    public void getCurrentUsage(){
         processorUsage = hardware.getProcessor().getSystemCpuLoad(0) * 100;
 
         diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
@@ -85,5 +87,25 @@ public class HostSpecs {
             this.freeSpace = freeSpace;
             this.size = size;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "HostSpecs{" +
+                "systemInfo=" + systemInfo +
+                ", hardware=" + hardware +
+                ", processor=" + processor +
+                ", processorModel='" + processorModel + '\'' +
+                ", processorSpeed=" + processorSpeed +
+                ", numCores=" + numCores +
+                ", diskCapacity=" + diskCapacity +
+                ", diskStores=" + Arrays.toString(diskStores) +
+                ", osVersion='" + osVersion + '\'' +
+                ", processorUsage=" + processorUsage +
+                ", disks=" + disks +
+                ", totalRAM=" + totalRAM +
+                ", availableRAM=" + availableRAM +
+                ", RAMUsed=" + RAMUsed +
+                '}';
     }
 }

@@ -1,16 +1,20 @@
 package visuals;
 
-import client.HostSpecs;
+import client.Client;
+import shared.ClientConnection;
+import shared.HostSpecs;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class DynamicTable {
-    public List<HostSpecs> registers;
+    public List<ClientConnection> registers;
     public DefaultTableModel columns;
 
     public JTable table;
@@ -45,16 +49,18 @@ public class DynamicTable {
         }).start();
     }
 
-    private static void updateTableModel(DefaultTableModel model, List<HostSpecs> data) {
+    private static void updateTableModel(DefaultTableModel model, List<ClientConnection> data) {
         int rowCount = model.getRowCount();
         for (int i = rowCount - 1; i >= 0; i--) {
             model.removeRow(i);
         }
 
-        for (HostSpecs hostInfo : data) {
+        Collections.sort(data);
+
+        for (ClientConnection hostInfo : data) {
             model.addRow(
                     new Object[]{
-                            "192.168.0.1",
+                            hostInfo.ipAddress,
                             hostInfo.processorModel,
                             hostInfo.processorSpeed,
                             hostInfo.numCores,
@@ -62,7 +68,8 @@ public class DynamicTable {
                             hostInfo.diskCapacity,
                             hostInfo.RAMUsed,
                             hostInfo.osVersion,
-                            "99999"
+                            hostInfo.rank,
+                            hostInfo.timer
                     }
             );
         }
