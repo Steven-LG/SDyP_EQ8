@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ClientConnection implements Serializable, Comparable<ClientConnection> {
     public String ipAddress;
@@ -30,6 +32,8 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
         getClientStaticInfo();
         getCurrentUsage();
     }
+    public ClientConnection(){}
+
     @Override
     public String toString() {
         return "ClientConnection{" +
@@ -81,7 +85,7 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
 
     public long RAMUsed;
 
-    private void getClientStaticInfo(){
+    public void getClientStaticInfo(){
         processorModel = processor.getProcessorIdentifier().getName();
         processorSpeed = processor.getProcessorIdentifier().getVendorFreq() / 1e6;
         numCores = processor.getPhysicalProcessorCount();
@@ -113,6 +117,43 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
         totalRAM = memory.getTotal();
         availableRAM = memory.getAvailable();
         RAMUsed = totalRAM - availableRAM;
+    }
+
+    public static int getRank(ClientConnection cConnection){
+        double generationScore = 0.0d;
+        // Define regex patterns for different processor generations
+        Pattern i9Pattern = Pattern.compile("i9", Pattern.CASE_INSENSITIVE);
+        Pattern i7Pattern = Pattern.compile("i7", Pattern.CASE_INSENSITIVE);
+        Pattern i5Pattern = Pattern.compile("i5", Pattern.CASE_INSENSITIVE);
+        Pattern i3Pattern = Pattern.compile("i3", Pattern.CASE_INSENSITIVE);
+
+        // Match the processor name against the regex patterns
+        Matcher i9Matcher = i9Pattern.matcher(cConnection.processorModel);
+        Matcher i7Matcher = i7Pattern.matcher(cConnection.processorModel);
+        Matcher i5Matcher = i5Pattern.matcher(cConnection.processorModel);
+        Matcher i3Matcher = i3Pattern.matcher(cConnection.processorModel);
+
+        // Check which pattern matches and set the generation accordingly
+        if (i9Matcher.find()) {
+            //9th Generation
+            generationScore = 900;
+
+        } else if (i7Matcher.find()) {
+            //8th Generation
+            generationScore = 800;
+
+        } else if (i5Matcher.find()) {
+            //7th Generation
+            generationScore = 700;
+
+        } else if (i3Matcher.find()) {
+            //6th Generation
+            generationScore = 500;
+
+        }
+        int rankScore = (int) (cConnection.RAMUsed * cConnection.availableRAM * cConnection.processorSpeed * generationScore) / 100000;
+
+        return rankScore;
     }
 
     public static class Disk{

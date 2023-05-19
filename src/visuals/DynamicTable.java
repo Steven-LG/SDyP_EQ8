@@ -18,7 +18,6 @@ public class DynamicTable {
     public DefaultTableModel columns;
 
     public JTable table;
-
     public JFrame frame;
 
     public DynamicTable(){
@@ -50,12 +49,14 @@ public class DynamicTable {
     }
 
     private static void updateTableModel(DefaultTableModel model, List<ClientConnection> data) {
-        int rowCount = model.getRowCount();
-        for (int i = rowCount - 1; i >= 0; i--) {
-            model.removeRow(i);
-        }
+        Collections.sort(data,new Comparator<ClientConnection>() {
+            @Override
+            public int compare(ClientConnection c1, ClientConnection c2) {
+                return Double.compare(c2.rank, c1.rank);
+            }
+        });
 
-        Collections.sort(data);
+        model.setRowCount(0);
 
         for (ClientConnection hostInfo : data) {
             model.addRow(
@@ -73,5 +74,7 @@ public class DynamicTable {
                     }
             );
         }
+
+        model.fireTableDataChanged();
     }
 }
