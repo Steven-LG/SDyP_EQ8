@@ -8,9 +8,16 @@ import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OperatingSystem;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static shared.ClientConnection.getRank;
 
 public class HostSpecs implements Serializable {
     public transient final SystemInfo systemInfo = new SystemInfo();
@@ -35,8 +42,15 @@ public class HostSpecs implements Serializable {
 
     public long RAMUsed;
 
+    public String ipAddress;
 
-    public HostSpecs(){
+    public int rank;
+    public Date timer;
+
+
+
+
+    public HostSpecs() throws UnknownHostException {
         getClientStaticInfo();
         getCurrentUsage();
     }
@@ -52,7 +66,8 @@ public class HostSpecs implements Serializable {
         HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
         diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
     }
-    public void getCurrentUsage(){
+    public void getCurrentUsage() throws UnknownHostException {
+        ipAddress = InetAddress.getLocalHost().getHostAddress();
         processorUsage = hardware.getProcessor().getSystemCpuLoad(0) * 100;
 
         diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
@@ -73,6 +88,45 @@ public class HostSpecs implements Serializable {
         totalRAM = memory.getTotal();
         availableRAM = memory.getAvailable();
         RAMUsed = totalRAM - availableRAM;
+        rank = getRank();
+        timer = new Date(System.currentTimeMillis());
+    }
+
+    private int getRank(){
+        double generationScore = 0.0d;
+        // Define regex patterns for different processor generations
+        Pattern i9Pattern = Pattern.compile("i9", Pattern.CASE_INSENSITIVE);
+        Pattern i7Pattern = Pattern.compile("i7", Pattern.CASE_INSENSITIVE);
+        Pattern i5Pattern = Pattern.compile("i5", Pattern.CASE_INSENSITIVE);
+        Pattern i3Pattern = Pattern.compile("i3", Pattern.CASE_INSENSITIVE);
+
+        // Match the processor name against the regex patterns
+        Matcher i9Matcher = i9Pattern.matcher(this.processorModel);
+        Matcher i7Matcher = i7Pattern.matcher(this.processorModel);
+        Matcher i5Matcher = i5Pattern.matcher(this.processorModel);
+        Matcher i3Matcher = i3Pattern.matcher(this.processorModel);
+
+        // Check which pattern matches and set the generation accordingly
+        if (i9Matcher.find()) {
+            //9th Generation
+            generationScore = 900;
+
+        } else if (i7Matcher.find()) {
+            //8th Generation
+            generationScore = 800;
+
+        } else if (i5Matcher.find()) {
+            //7th Generation
+            generationScore = 700;
+
+        } else if (i3Matcher.find()) {
+            //6th Generation
+            generationScore = 500;
+
+        }
+        int rankScore = (int) (this.RAMUsed * this.availableRAM * this.processorSpeed * generationScore) / 100000;
+
+        return rankScore;
     }
 
     public static class Disk{

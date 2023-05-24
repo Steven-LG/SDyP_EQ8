@@ -14,7 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class DynamicTable {
-    public List<ClientConnection> registers;
+    public List<HostSpecs> registers;
     public DefaultTableModel columns;
 
     public JTable table;
@@ -48,17 +48,17 @@ public class DynamicTable {
         }).start();
     }
 
-    private static void updateTableModel(DefaultTableModel model, List<ClientConnection> data) {
-        Collections.sort(data,new Comparator<ClientConnection>() {
+    private static void updateTableModel(DefaultTableModel model, List<HostSpecs> data) {
+        Collections.sort(data,new Comparator<HostSpecs>() {
             @Override
-            public int compare(ClientConnection c1, ClientConnection c2) {
+            public int compare(HostSpecs c1, HostSpecs c2) {
                 return Double.compare(c2.rank, c1.rank);
             }
         });
 
         model.setRowCount(0);
 
-        for (ClientConnection hostInfo : data) {
+        for (HostSpecs hostInfo : data) {
             model.addRow(
                     new Object[]{
                             hostInfo.ipAddress,

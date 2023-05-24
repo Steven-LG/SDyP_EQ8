@@ -85,6 +85,10 @@ public class Server {
                             ClientConnection clientConnection = (ClientConnection) objInputStream.readObject();
                             clientAssignedToThread = clientConnection;
 
+
+
+
+
                             if(hostsInfo.get(clientConnection.ipAddress) == null){
                                 dynamicTable.registers.add(clientConnection);
                                 hostsInfo.put(clientConnection.ipAddress, clientConnection.rank);
