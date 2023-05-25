@@ -6,11 +6,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="Tarea_6_Equipo_8" />
+        <module name="TP7" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="Tarea_6_Equipo_8" target="1.8" />
-    </bytecodeTargetLevel>
   </component>
 </project>
