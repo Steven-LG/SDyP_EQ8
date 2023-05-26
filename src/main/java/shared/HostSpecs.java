@@ -124,6 +124,10 @@ public class HostSpecs implements Serializable {
         }
         int rankScore = (int) (this.RAMUsed * this.availableRAM * this.processorSpeed * generationScore) / 100000;
 
+        if(rankScore < 0){
+            rankScore = rankScore * -1;
+        }
+
         return rankScore;
     }
 
