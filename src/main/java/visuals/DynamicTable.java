@@ -1,12 +1,8 @@
 package visuals;
 
-import client.Client;
-import shared.ClientConnection;
 import shared.HostSpecs;
 
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,12 +10,11 @@ import java.util.Comparator;
 import java.util.List;
 
 public class DynamicTable {
-    public List<ClientConnection> registers;
+    public List<HostSpecs> registers;
     public DefaultTableModel columns;
 
     public JTable table;
     public JFrame frame;
-
     public DynamicTable(){
         registers = new ArrayList<>();
         columns = new DefaultTableModel();
@@ -31,7 +26,6 @@ public class DynamicTable {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
     }
 
     public void initializeTable () {
@@ -48,17 +42,17 @@ public class DynamicTable {
         }).start();
     }
 
-    private static void updateTableModel(DefaultTableModel model, List<ClientConnection> data) {
-        Collections.sort(data,new Comparator<ClientConnection>() {
+    private static void updateTableModel(DefaultTableModel model, List<HostSpecs> data) {
+        Collections.sort(data,new Comparator<HostSpecs>() {
             @Override
-            public int compare(ClientConnection c1, ClientConnection c2) {
+            public int compare(HostSpecs c1, HostSpecs c2) {
                 return Double.compare(c2.rank, c1.rank);
             }
         });
 
         model.setRowCount(0);
 
-        for (ClientConnection hostInfo : data) {
+        for (HostSpecs hostInfo : data) {
             model.addRow(
                     new Object[]{
                             hostInfo.ipAddress,
