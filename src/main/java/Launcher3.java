@@ -90,12 +90,12 @@ public class Launcher3 {
 //
 //        });
 
-        Thread clientThread = new Thread(() -> {
-
-        });
+//        Thread clientThread = new Thread(() -> {
+//
+//        });
 
 //        serverThread.start();
-        clientThread.start();
+//        clientThread.start();
 
         // Iniciar receptor UDP
 //        Thread UDPThreadListener = new Thread(() -> {
