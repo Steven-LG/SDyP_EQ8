@@ -17,14 +17,13 @@ public class Launcher2 {
             throw new RuntimeException(e);
         }
     }
-
-    private static Integer rank = 10;
+    private static Integer rank = 15;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
     private static HashMap<String, Integer> mostUsableOne = new HashMap<>();;
     private static boolean changeServer = false;
-    private static boolean isServer = false;
+    private static boolean isServer = true;
 
     private static HashMap<String, Integer> hosts;
 
@@ -39,6 +38,7 @@ public class Launcher2 {
     private static HostSpecs hostSpecs;
     private static DynamicTable dynamicTable;
     public static ServerSocket serverSocket;
+
 
     public static void main(String[] args) throws IOException, InterruptedException {
         hostSpecs = new HostSpecs();
@@ -86,48 +86,54 @@ public class Launcher2 {
 
         Thread serverThread = new Thread(() -> {
             while (true) {
-                synchronized (lock) {
-                    while (!isServer) {
+//                synchronized (lock) {
+//                    while (!isServer) {
+//                        try {
+//                            lock.wait();
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+
+                    while(isServer){
+                        dynamicTable.frame.setVisible(true);
+                        System.out.println("Running as server");
+                        System.out.println("Waiting for connection...");
                         try {
-                            lock.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            Socket clientSocket = serverSocket.accept();
+                            ServerThread newClientHandler = new ServerThread(clientSocket);
+                            newClientHandler.start();
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
                     }
 
-                    dynamicTable.frame.setVisible(true);
-                    System.out.println("Running as server");
-                    System.out.println("Waiting for connection...");
-                    try {
-                        Socket clientSocket = serverSocket.accept();
-                        ServerThread newClientHandler = new ServerThread(clientSocket);
-                        newClientHandler.start();
 
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
 
-                    lock.notifyAll();
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+//                    lock.notifyAll();
+//                    try {
+//                        lock.wait();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
             }
         });
 
         Thread clientThread = new Thread(() -> {
             while (true) {
-                synchronized (lock) {
-                    while (isServer) {
-                        try {
-                            lock.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
 
+//                synchronized (lock) {
+//                    while (isServer) {
+//                        try {
+//                            lock.wait();
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+
+//                while(!isServer){
                     dynamicTable.frame.setVisible(false);
 
                     System.out.println("Running as client");
@@ -156,14 +162,17 @@ public class Launcher2 {
                         }
                     });
                     threadTask.start();
+//                }
 
-                    lock.notifyAll();
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+
+
+//                    lock.notifyAll();
+//                    try {
+//                        lock.wait();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
             }
         });
 
