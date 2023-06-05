@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 20;
+    private static Integer rank = 30;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -253,7 +253,7 @@ public class Launcher3{
 
 //            System.out.println("Most usable one");
 //            System.out.println(mostUsableHost);
-
+            mostUsableOne.clear();
             mostUsableOne.put(mostUsableHost, highiestRank);
 
             if(lastOptimalOne.isEmpty()){
