@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 10;
+    private static Integer rank = 30;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -95,16 +95,19 @@ public class Launcher3{
 
                     dynamicTable.frame.setVisible(true);
                     System.out.println("Running as server");
+
                     System.out.println("Waiting for connection...");
                     try {
                         System.out.println("AQUÍ SE BLOQUEA");
-                        Socket clientSocket = serverSocket.accept();
+                        while(!changeServer){
+                            Socket clientSocket = serverSocket.accept();
 //                        if(!isServer){
 //                            throw new Exception("SERVER CANCELED");
 //                        }
-                        System.out.println("EN EFECTO SE BLOQUEA");
-                        ServerThread newClientHandler = new ServerThread(clientSocket);
-                        newClientHandler.start();
+                            System.out.println("EN EFECTO SE BLOQUEA");
+                            ServerThread newClientHandler = new ServerThread(clientSocket);
+                            newClientHandler.start();
+                        }
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
