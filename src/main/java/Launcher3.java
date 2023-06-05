@@ -41,6 +41,7 @@ public class Launcher3{
     public static ServerSocket serverSocket;
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        hosts = new HashMap<>();
         hostSpecs = new HostSpecs();
         hostsInfo = new HashMap<String, Integer>(){};
 
@@ -239,7 +240,7 @@ public class Launcher3{
     }
 
     public static void UDPEmitter() throws IOException, InterruptedException {
-        hosts = new HashMap<>();
+
         hosts.put(hostIP, rank);
 
         ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
