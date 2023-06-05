@@ -99,15 +99,31 @@ public class Launcher3{
                     System.out.println("Waiting for connection...");
                     try {
                         System.out.println("AQUÍ SE BLOQUEA");
-                        while(!changeServer){
-                            Socket clientSocket = serverSocket.accept();
-//                        if(!isServer){
-//                            throw new Exception("SERVER CANCELED");
-//                        }
-                            System.out.println("EN EFECTO SE BLOQUEA");
-                            ServerThread newClientHandler = new ServerThread(clientSocket);
-                            newClientHandler.start();
+
+                        while (!changeServer) {
+                            try {
+                                // Configura un timeout para el socket
+                                serverSocket.setSoTimeout(1000); // Tiempo de espera en milisegundos
+                                Socket clientSocket = serverSocket.accept();
+                                System.out.println("EN EFECTO SE BLOQUEA");
+                                ServerThread newClientHandler = new ServerThread(clientSocket);
+                                newClientHandler.start();
+                            } catch (SocketTimeoutException e) {
+                                // Excepción lanzada cuando el timeout se alcanza sin conexiones entrantes
+                                // Comprueba el valor de changeServer nuevamente
+                                if (changeServer) {
+                                    break; // Sale del bucle si changeServer cambió
+                                }
+                            }
                         }
+//                        
+//                        while(!changeServer){
+//                            Socket clientSocket = serverSocket.accept();
+////
+//                            System.out.println("EN EFECTO SE BLOQUEA");
+//                            ServerThread newClientHandler = new ServerThread(clientSocket);
+//                            newClientHandler.start();
+//                        }
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
