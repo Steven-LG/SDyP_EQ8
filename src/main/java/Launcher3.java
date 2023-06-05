@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 15;
+    private static Integer rank = 20;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -97,10 +97,12 @@ public class Launcher3{
                     System.out.println("Running as server");
                     System.out.println("Waiting for connection...");
                     try {
+                        System.out.println("AQUÍ SE BLOQUEA");
                         Socket clientSocket = serverSocket.accept();
 //                        if(!isServer){
 //                            throw new Exception("SERVER CANCELED");
 //                        }
+                        System.out.println("EN EFECTO SE BLOQUEA");
                         ServerThread newClientHandler = new ServerThread(clientSocket);
                         newClientHandler.start();
 
@@ -135,14 +137,11 @@ public class Launcher3{
 
                     System.out.println("Running as client");
 //                    Thread threadTask = new Thread(() -> {
-//                        //String mostUsableHost = Collections.max(hostsInfo.entrySet(), Map.Entry.comparingByValue()).getKey();
-//                        //String mostUsableHost = "localhost";
-//
                         try {
 //                            while(hosts.size() == 0){
 //                                System.out.println("Waiting for other host to join...");
 //                            }
-                            Socket cSocket = new Socket("25.8.91.48", SERVER_PORT);
+                            Socket cSocket = new Socket(mostUsableOne.keySet().iterator().next(), SERVER_PORT);
                             System.out.println("SOCKET IS CONNECTED "+cSocket.isConnected());
                             AtomicReference<ObjectOutputStream> objOutputStream = new AtomicReference<>(new ObjectOutputStream(cSocket.getOutputStream()));
 
@@ -176,67 +175,6 @@ public class Launcher3{
 
         serverThread.start();
         clientThread.start();
-
-        // Iniciar receptor UDP
-//        Thread UDPThreadListener = new Thread(() -> {
-//            while(true){
-//                try {
-//                    DatagramSocket socket = new DatagramSocket(12345);
-//                    showDynamicTable();
-//                    dynamicTable.frame.setVisible(true);
-//
-//                    byte[] receiveBuffer = new byte[1024];
-//
-//                    while (true) {
-//                        DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-//                        socket.receive(receivePacket);
-//                        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
-//                        System.out.println("Message from server: " + receivedMessage);
-//
-//                        // Server and most usable one
-//                        if(startServer && hostSpecs.ipAddress.equals(receivedMessage)){
-//                            System.out.println("SERVER IS MOST USABLE ONE ");
-//                        }
-//
-//                        // Server and is not the most usable one
-//                        if(startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
-//                            synchronized (lock) {
-//                                // Should be changed to client and connect to the most usable one
-//                                startServer = false;
-//                                lock.notifyAll();
-//                            }
-//                        }
-//
-//                        // Client and need to be server
-//                        if(!startServer && hostSpecs.ipAddress.equals(receivedMessage)){
-//                            synchronized (lock) {
-//                                // Change to server and close socket that were from client
-//                                startServer = true;
-//                                changeServer = false;
-//                                lock.notifyAll();
-//                            }
-//                        }
-//
-//                        // Client and dont need to be server
-//                        if(!startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
-//                            synchronized (lock) {
-//                                // If the most usable one don't correspond to the received one, then make a change in socket
-//                                startServer = false;
-//                                changeServer = true;
-//                                lock.notifyAll();
-//                            }
-//                        }
-//                    }
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//
-//        });
-//
-//        UDPThreadListener.start();
     }
 
     public static void UDPEmitter() throws IOException, InterruptedException {
@@ -371,6 +309,60 @@ public class Launcher3{
         }
     }
 
+    public static class ServerThread extends Thread {
+        public Socket clientSocket;
+        public ServerThread(Socket gSocket){
+            clientSocket = gSocket;
+        }
+        @Override
+        public void run() {
+            System.out.println("Administrando a cliente "+this.clientSocket);
+            HostSpecs clientAssignedToThread = null;
+            try {
+                clientAssignedToThread = new HostSpecs();
+                ObjectInputStream objInputStream = new ObjectInputStream(clientSocket.getInputStream());
+                while (isServer) {
+                    try {
+                        HostSpecs receivedClientSpecs = (HostSpecs) objInputStream.readObject();
+                        clientAssignedToThread = receivedClientSpecs;
+                        System.out.print("Received client specs: ");
+                        System.out.println(receivedClientSpecs);
+//
+////                        // If the host is new connection
+                        if (hostsInfo.get(receivedClientSpecs.ipAddress) == null) {
+                            dynamicTable.registers.add(receivedClientSpecs);
+                            hostsInfo.put(receivedClientSpecs.ipAddress, receivedClientSpecs.rank);
+                        } else {
+                            // update host info in table
+                            for (HostSpecs hSpecs : dynamicTable.registers) {
+                                if (Objects.equals(hSpecs.ipAddress, receivedClientSpecs.ipAddress)) {
+                                    int registerIndex = dynamicTable.registers.indexOf(hSpecs);
+                                    dynamicTable.registers.set(registerIndex, receivedClientSpecs);
+                                }
+                            }
+                        }
+
+                        if (!clientSocket.isConnected()) {
+                            System.out.println("Client disconnected");
+                            hostsInfo.remove(receivedClientSpecs.ipAddress);
+                            dynamicTable.registers.remove(receivedClientSpecs);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+////
+                }
+////
+            } catch (IOException e) {
+                System.out.println("Client disconnected");
+                System.out.println(e.getMessage().toUpperCase() + " - " + clientAssignedToThread.ipAddress);
+
+                hostsInfo.remove(clientAssignedToThread.ipAddress);
+                dynamicTable.registers.remove(clientAssignedToThread);
+            }
+        }
+    }
+
     public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(HashMap<String, Integer> receivedHashMap){
         // HashMap sorting
         ArrayList<Map.Entry<String, Integer>> entryList = new ArrayList<>(receivedHashMap.entrySet());
@@ -383,82 +375,6 @@ public class Launcher3{
         });
 
         return entryList;
-    }
-    //
-    public static class ServerThread extends Thread {
-        public Socket clientSocket;
-        public ServerThread(Socket gSocket){
-            clientSocket = gSocket;
-        }
-        @Override
-        public void run() {
-            System.out.println("Administrando a cliente "+this.clientSocket);
-//            HostSpecs clientAssignedToThread = null;
-//            try {
-//                clientAssignedToThread = new HostSpecs();
-//                ObjectInputStream objInputStream = new ObjectInputStream(clientSocket.getInputStream());
-//                while (isServer) {
-//                    try {
-//                        HostSpecs receivedClientSpecs = (HostSpecs) objInputStream.readObject();
-//                        clientAssignedToThread = receivedClientSpecs;
-//                        System.out.print("Received client specs: ");
-//                        System.out.println(receivedClientSpecs);
-//
-////                        // If the host is new connection
-//                        if (hostsInfo.get(receivedClientSpecs.ipAddress) == null) {
-//                            dynamicTable.registers.add(receivedClientSpecs);
-//                            hostsInfo.put(receivedClientSpecs.ipAddress, receivedClientSpecs.rank);
-//                        } else {
-////                            // Check for the most usable host
-////                            // update host info in table
-////                            String mostUsableHost = "";
-//                            for (HostSpecs hSpecs : dynamicTable.registers) {
-//                                if (Objects.equals(hSpecs.ipAddress, receivedClientSpecs.ipAddress)) {
-//                                    int registerIndex = dynamicTable.registers.indexOf(hSpecs);
-//                                    dynamicTable.registers.set(registerIndex, receivedClientSpecs);
-////
-////                                    // Gets most usable host, and then it should pass it through UDP to clients
-////                                    mostUsableHost = Collections.max(hostsInfo.entrySet(), Map.Entry.comparingByValue()).getKey();
-////                                    try{
-////                                        DatagramSocket UDPBroadcastSocket = new DatagramSocket();
-////                                        UDPBroadcastSocket.setBroadcast(true);
-////                                        byte[] buffer = mostUsableHost.getBytes();
-////                                        InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
-////                                        int clientPort = 12345;
-////                                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, broadcastAddress, clientPort);
-////                                        UDPBroadcastSocket.send(packet);
-////
-////                                    } catch (SocketException e) {
-////                                        e.printStackTrace();
-////                                    } catch (UnknownHostException e) {
-////                                        e.printStackTrace();
-////                                    }
-//                                }
-//                            }
-////                            System.out.print("Most usable host:");
-////                            System.out.println(mostUsableHost);
-//                        }
-////
-////
-//                        if (!clientSocket.isConnected()) {
-//                            System.out.println("Client disconnected");
-//                            hostsInfo.remove(receivedClientSpecs.ipAddress);
-//                            dynamicTable.registers.remove(receivedClientSpecs);
-//                        }
-//                    } catch (ClassNotFoundException e) {
-//                        e.printStackTrace();
-//                    }
-////
-//                }
-////
-//            } catch (IOException e) {
-//                System.out.println("Client disconnected");
-//                System.out.println(e.getMessage().toUpperCase() + " - " + clientAssignedToThread.ipAddress);
-//
-//                hostsInfo.remove(clientAssignedToThread.ipAddress);
-//                dynamicTable.registers.remove(clientAssignedToThread);
-//            }
-        }
     }
 
     private static void showDynamicTable() throws InterruptedException, UnknownHostException {
@@ -483,8 +399,6 @@ public class Launcher3{
         UpdateServerInTable updateServerInTable = new UpdateServerInTable();
         updateServerInTable.start();
     }
-
-
     static class UpdateServerInTable extends Thread {
         @Override
         public void run() {
