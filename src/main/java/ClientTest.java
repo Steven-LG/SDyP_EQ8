@@ -1,5 +1,3 @@
-package org.example;
-
 import shared.HostSpecs;
 
 import java.io.IOException;
@@ -8,8 +6,7 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClientTest {
-
-    public static boolean isServer = true;
+    public static boolean isServer = false;
     public static void main(String[] args) {
         System.out.println("Running as client");
         Thread threadTask = new Thread(() -> {
@@ -17,7 +14,7 @@ public class ClientTest {
             //String mostUsableHost = "localhost";
 
             try {
-                Socket cSocket = new Socket("25.8.91.48", 5555);
+                Socket cSocket = new Socket("25.3.224.138", 5555);
                 AtomicReference<ObjectOutputStream> objOutputStream = new AtomicReference<>(new ObjectOutputStream(cSocket.getOutputStream()));
 
                 while(!isServer){

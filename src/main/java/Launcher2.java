@@ -18,7 +18,7 @@ public class Launcher2 {
         }
     }
 
-    private static Integer rank = 9;
+    private static Integer rank = 20;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -97,7 +97,7 @@ public class Launcher2 {
                     System.out.println("Waiting for connection...");
                     try {
                         Socket clientSocket = serverSocket.accept();
-                        if(isServer){
+                        if(!isServer){
                             throw new Exception("SERVER CANCELED");
                         }
                         ServerThread newClientHandler = new ServerThread(clientSocket);
