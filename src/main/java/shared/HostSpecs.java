@@ -45,9 +45,6 @@ public class HostSpecs implements Serializable {
     public int rank;
     public Date timer;
 
-
-
-
     public HostSpecs() throws UnknownHostException {
         getClientStaticInfo();
         getCurrentUsage();
@@ -110,15 +107,15 @@ public class HostSpecs implements Serializable {
             generationScore = 900;
 
         } else if (i7Matcher.find()) {
-            //8th Generation
+            //7th Generation
             generationScore = 800;
 
         } else if (i5Matcher.find()) {
-            //7th Generation
+            //5th Generation
             generationScore = 700;
 
         } else if (i3Matcher.find()) {
-            //6th Generation
+            //3th Generation
             generationScore = 500;
 
         }

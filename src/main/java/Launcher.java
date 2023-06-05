@@ -116,62 +116,65 @@ public class Launcher {
         clientThread.start();
 
         // Iniciar receptor UDP
-        Thread UDPThreadListener = new Thread(() -> {
-            while(true){
-                try {
-                    DatagramSocket socket = new DatagramSocket(12345);
-                    showDynamicTable();
-                    dynamicTable.frame.setVisible(true);
-
-                    byte[] receiveBuffer = new byte[1024];
-
-                    while (true) {
-                        DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-                        socket.receive(receivePacket);
-                        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                        System.out.println("Message from server: " + receivedMessage);
-
-                        // Server and most usable one
-                        if(startServer && hostSpecs.ipAddress.equals(receivedMessage)){
-                            System.out.println("SERVER IS MOST USABLE ONE ");
-                        }
-
-                        // Server and is not the most usable one
-                        if(startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
-                            synchronized (lock) {
-                                startServer = false;
-                                lock.notifyAll();
-                            }
-                        }
-
-                        // Client and need to be server
-                        if(!startServer && hostSpecs.ipAddress.equals(receivedMessage)){
-                            synchronized (lock) {
-                                startServer = true;
-                                changeServer = false;
-                                lock.notifyAll();
-                            }
-                        }
-
-                        // Client and dont need to be server
-                        if(!startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
-                            synchronized (lock) {
-                                startServer = false;
-                                changeServer = true;
-                                lock.notifyAll();
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        });
-
-        UDPThreadListener.start();
+//        Thread UDPThreadListener = new Thread(() -> {
+//            while(true){
+//                try {
+//                    DatagramSocket socket = new DatagramSocket(12345);
+//                    showDynamicTable();
+//                    dynamicTable.frame.setVisible(true);
+//
+//                    byte[] receiveBuffer = new byte[1024];
+//
+//                    while (true) {
+//                        DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+//                        socket.receive(receivePacket);
+//                        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
+//                        System.out.println("Message from server: " + receivedMessage);
+//
+//                        // Server and most usable one
+//                        if(startServer && hostSpecs.ipAddress.equals(receivedMessage)){
+//                            System.out.println("SERVER IS MOST USABLE ONE ");
+//                        }
+//
+//                        // Server and is not the most usable one
+//                        if(startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
+//                            synchronized (lock) {
+//                                // Should be changed to client and connect to the most usable one
+//                                startServer = false;
+//                                lock.notifyAll();
+//                            }
+//                        }
+//
+//                        // Client and need to be server
+//                        if(!startServer && hostSpecs.ipAddress.equals(receivedMessage)){
+//                            synchronized (lock) {
+//                                // Change to server and close socket that were from client
+//                                startServer = true;
+//                                changeServer = false;
+//                                lock.notifyAll();
+//                            }
+//                        }
+//
+//                        // Client and dont need to be server
+//                        if(!startServer && !hostSpecs.ipAddress.equals(receivedMessage)){
+//                            synchronized (lock) {
+//                                // If the most usable one don't correspond to the received one, then make a change in socket
+//                                startServer = false;
+//                                changeServer = true;
+//                                lock.notifyAll();
+//                            }
+//                        }
+//                    }
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//        });
+//
+//        UDPThreadListener.start();
     }
     private static void showDynamicTable() throws InterruptedException, UnknownHostException {
         dynamicTable = new DynamicTable();
@@ -281,7 +284,6 @@ public class Launcher {
                             System.out.println("Client disconnected");
                             hostsInfo.remove(receivedClientSpecs.ipAddress);
                             dynamicTable.registers.remove(receivedClientSpecs);
-//                                        break;
                         }
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
@@ -296,10 +298,7 @@ public class Launcher {
                 hostsInfo.remove(clientAssignedToThread.ipAddress);
                 dynamicTable.registers.remove(clientAssignedToThread);
             }
-//                        }
         }
     }
 
 }
-
-
