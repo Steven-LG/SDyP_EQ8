@@ -99,11 +99,10 @@ public class Launcher3{
                     System.out.println("Waiting for connection...");
                     try {
                         System.out.println("AQUÍ SE BLOQUEA");
+                        serverSocket.setSoTimeout(1000); // Tiempo de espera en milisegundos
 
                         while (!changeServer) {
                             try {
-                                // Configura un timeout para el socket
-                                serverSocket.setSoTimeout(1000); // Tiempo de espera en milisegundos
                                 Socket clientSocket = serverSocket.accept();
                                 System.out.println("EN EFECTO SE BLOQUEA");
                                 ServerThread newClientHandler = new ServerThread(clientSocket);
@@ -116,15 +115,6 @@ public class Launcher3{
                                 }
                             }
                         }
-//                        
-//                        while(!changeServer){
-//                            Socket clientSocket = serverSocket.accept();
-////
-//                            System.out.println("EN EFECTO SE BLOQUEA");
-//                            ServerThread newClientHandler = new ServerThread(clientSocket);
-//                            newClientHandler.start();
-//                        }
-
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     } catch (Exception e) {
