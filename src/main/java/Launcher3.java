@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 30;
+    private static Integer rank = 10;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -141,7 +141,12 @@ public class Launcher3{
 //                            while(hosts.size() == 0){
 //                                System.out.println("Waiting for other host to join...");
 //                            }
+
+                            System.out.print("most usable one");
+                            System.out.println(mostUsableOne.keySet().iterator().next());
+
                             Socket cSocket = new Socket(mostUsableOne.keySet().iterator().next(), SERVER_PORT);
+
                             System.out.println("SOCKET IS CONNECTED "+cSocket.isConnected());
                             AtomicReference<ObjectOutputStream> objOutputStream = new AtomicReference<>(new ObjectOutputStream(cSocket.getOutputStream()));
 
@@ -153,6 +158,10 @@ public class Launcher3{
                                 System.out.println("Object sent");
                                 objOutputStream.get().flush();
                                 Thread.sleep(2000);
+
+                                if(changeServer){
+                                    break;
+                                }
                             }
 
                         } catch (IOException e) {
@@ -265,10 +274,12 @@ public class Launcher3{
 
                 System.out.println("LAST OPTIMAL ONE CHANGED");
 
-//                synchronized (lock) {
-//                    // boolean
-//                    lock.notifyAll();
-//                }
+                synchronized (lock) {
+                    // boolean
+
+                    changeServer = true;
+                    lock.notifyAll();
+                }
             }
 
             // As server - WORKS
