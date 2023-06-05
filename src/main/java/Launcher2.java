@@ -8,8 +8,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Launcher2 {
 
-    private static String hostIP = "164.164.164.189";
-    private static Integer rank = 9;
+    private static String hostIP;
+
+    static {
+        try {
+            hostIP = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Integer rank = 10;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -26,7 +35,6 @@ public class Launcher2 {
     // Last modification
     private static final int SERVER_PORT = 5555;
     private static Object lock = new Object();
-    private static boolean startServer = true;
     private static HashMap<String, Integer> hostsInfo;
     private static HostSpecs hostSpecs;
     private static DynamicTable dynamicTable;
@@ -79,7 +87,7 @@ public class Launcher2 {
         Thread serverThread = new Thread(() -> {
             while (true) {
                 synchronized (lock) {
-                    while (!startServer) {
+                    while (!isServer) {
                         try {
                             lock.wait();
                         } catch (InterruptedException e) {
@@ -112,13 +120,15 @@ public class Launcher2 {
         Thread clientThread = new Thread(() -> {
             while (true) {
                 synchronized (lock) {
-                    while (startServer) {
+                    while (isServer) {
                         try {
                             lock.wait();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
+
+                    dynamicTable.frame.setVisible(false);
 
                     System.out.println("Running as client");
                     Thread threadTask = new Thread(() -> {
@@ -129,7 +139,7 @@ public class Launcher2 {
                             Socket cSocket = new Socket(mostUsableOne.keySet().iterator().next(), SERVER_PORT);
                             AtomicReference<ObjectOutputStream> objOutputStream = new AtomicReference<>(new ObjectOutputStream(cSocket.getOutputStream()));
 
-                            while(!startServer){
+                            while(!isServer){
                                 HostSpecs clientMessage = new HostSpecs();
                                 clientMessage.getCurrentUsage();
 
@@ -247,7 +257,7 @@ public class Launcher2 {
 
         while(true){
             UDPSocket.send(UDPPacket);
-            System.out.println("Packet sent. ");
+            System.out.println("UDP Emitter : Packet sent. ");
             Thread.sleep(2000);
         }
     }
@@ -273,22 +283,22 @@ public class Launcher2 {
             HashMap<String, Integer> receivedHashMap = (HashMap<String, Integer>) inputObjectStream.readObject();
 
 
-            System.out.println("Before merge");
-            System.out.println(hosts);
+//            System.out.println("Before merge");
+//            System.out.println(hosts);
 
             hosts.putAll(receivedHashMap);
 
-            System.out.println("Merged HashMap");
-            System.out.println(hosts);
+//            System.out.println("Merged HashMap");
+//            System.out.println(hosts);
 
 
             ArrayList<Map.Entry<String, Integer>> entryList = hashMapToArrayList(hosts);
 
-            System.out.println("Received data:");
+//            System.out.println("Received data:");
             String mostUsableHost = "";
             int highiestRank = 0;
             for (Map.Entry<String, Integer> entry : entryList) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
+                //System.out.println(entry.getKey() + ": " + entry.getValue());
 
                 if(entry.getValue() > highiestRank){
                     highiestRank = entry.getValue();
@@ -296,8 +306,8 @@ public class Launcher2 {
                 }
             }
 
-            System.out.println("Most usable one");
-            System.out.println(mostUsableHost);
+//            System.out.println("Most usable one");
+//            System.out.println(mostUsableHost);
 
             mostUsableOne.put(mostUsableHost, highiestRank);
 
@@ -309,23 +319,41 @@ public class Launcher2 {
                 lastOptimalOne = mostUsableOne;
 
                 System.out.println("LAST OPTIMAL ONE CHANGED");
+
+//                synchronized (lock) {
+//                    // boolean
+//                    lock.notifyAll();
+//                }
             }
 
             // As server
             if(isServer && !mostUsableOne.equals(localAddressAndRank)){
                 // Change to client
-                isServer = false;
+
 
                 System.out.println("SERVER TO CLIENT DONE");
+
+                synchronized (lock) {
+                    isServer = false;
+                    // boolean
+                    lock.notifyAll();
+                }
             }
 
             // As client
             if(!isServer && mostUsableOne.equals(localAddressAndRank)){
-                // Change to server
-                isServer = true;
-                changeServer = false;
+
 
                 System.out.println("CLIENT TO SERVER DONE");
+
+                synchronized (lock) {
+                    // boolean
+                    // Change to server
+                    isServer = true;
+                    changeServer = false;
+
+                    lock.notifyAll();
+                }
             }
 
             if(!isServer && !lastOptimalOne.equals(mostUsableOne)){
@@ -362,7 +390,7 @@ public class Launcher2 {
             try {
                 clientAssignedToThread = new HostSpecs();
                 ObjectInputStream objInputStream = new ObjectInputStream(clientSocket.getInputStream());
-                while (startServer) {
+                while (isServer) {
                     try {
                         HostSpecs receivedClientSpecs = (HostSpecs) objInputStream.readObject();
                         clientAssignedToThread = receivedClientSpecs;
