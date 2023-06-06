@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 30;
+    private static Integer rank = 20;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -76,11 +76,7 @@ public class Launcher3{
 
 
 
-        try {
-            serverSocket = new ServerSocket(SERVER_PORT);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
 
         Thread serverThread = new Thread(() -> {
             while (true) {
@@ -98,6 +94,8 @@ public class Launcher3{
 
                     System.out.println("Waiting for connection...");
                     try {
+                        serverSocket = new ServerSocket(SERVER_PORT);
+
                         System.out.println("AQUÍ SE BLOQUEA");
                         while(!changeServer){
                             Socket clientSocket = serverSocket.accept();
@@ -365,6 +363,7 @@ public class Launcher3{
                         }
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
+                        
                     }
 ////
                 }
