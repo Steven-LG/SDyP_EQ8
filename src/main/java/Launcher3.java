@@ -18,7 +18,7 @@ public class Launcher3{
         }
     }
 
-    private static Integer rank = 20;
+    private static Integer rank = 30;
     private static final int PORT = 1234;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
@@ -280,7 +280,7 @@ public class Launcher3{
                 synchronized (lock) {
                     // boolean
 
-                    changeServer = true;
+                    //changeServer = true;
                     lock.notifyAll();
                 }
             }
@@ -332,17 +332,21 @@ public class Launcher3{
         public void run() {
             System.out.println("Administrando a cliente "+this.clientSocket);
             HostSpecs clientAssignedToThread = null;
-            try {
+
+            try{
                 clientAssignedToThread = new HostSpecs();
                 ObjectInputStream objInputStream = new ObjectInputStream(clientSocket.getInputStream());
-                while (isServer) {
-                    try {
+                while(true){
+                    System.out.print("SOCKET CLIENT IS CONNECTED? ");
+                    System.out.println(clientSocket.isConnected());
+
+                    try{
                         HostSpecs receivedClientSpecs = (HostSpecs) objInputStream.readObject();
                         clientAssignedToThread = receivedClientSpecs;
                         System.out.print("Received client specs: ");
                         System.out.println(receivedClientSpecs);
-//
-////                        // If the host is new connection
+
+                        // If the host is new connection
                         if (hostsInfo.get(receivedClientSpecs.ipAddress) == null) {
                             dynamicTable.registers.add(receivedClientSpecs);
                             hostsInfo.put(receivedClientSpecs.ipAddress, receivedClientSpecs.rank);
@@ -356,24 +360,18 @@ public class Launcher3{
                             }
                         }
 
-                        if (!clientSocket.isConnected()) {
-                            System.out.println("Client disconnected");
-                            hostsInfo.remove(receivedClientSpecs.ipAddress);
-                            dynamicTable.registers.remove(receivedClientSpecs);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                        
+//
+                    } catch (Exception e){
+                        System.out.println(e.getMessage());
                     }
-////
-                }
-////
-            } catch (IOException e) {
-                System.out.println("Client disconnected");
-                System.out.println(e.getMessage().toUpperCase() + " - " + clientAssignedToThread.ipAddress);
 
-                hostsInfo.remove(clientAssignedToThread.ipAddress);
-                dynamicTable.registers.remove(clientAssignedToThread);
+                }
+            } catch (UnknownHostException e) {
+                System.out.println(e.getMessage());
+//                throw new RuntimeException(e);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+//                throw new RuntimeException(e);
             }
         }
     }
@@ -432,9 +430,11 @@ public class Launcher3{
                     }
 
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    System.out.println(e.getMessage());
+                    //throw new RuntimeException(e);
                 } catch (UnknownHostException e) {
-                    throw new RuntimeException(e);
+                    System.out.println(e.getMessage());
+                    //throw new RuntimeException(e);
                 }
             }
         }
