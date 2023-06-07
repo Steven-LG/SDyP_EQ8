@@ -24,14 +24,7 @@ public class Launcher {
     private static HashMap<String, Integer> mostUsableOne = new HashMap<>();;
     private static boolean changeServer = false;
     private static boolean isServer = false;
-
     private static HashMap<String, Integer> hosts;
-
-
-
-
-
-    // Last modification
     private static final int SERVER_PORT = 5555;
     private static Object lock = new Object();
     private static HashMap<String, Integer> hostsInfo;
@@ -90,12 +83,8 @@ public class Launcher {
                     try {
                         serverSocket = new ServerSocket(SERVER_PORT);
 
-                        System.out.println("AQUÍ SE BLOQUEA");
                         while(!changeServer){
                             Socket clientSocket = serverSocket.accept();
-//                        if(!isServer){
-//                            throw new Exception("SERVER CANCELED");
-//                        }
                             System.out.println("EN EFECTO SE BLOQUEA");
                             ServerThread newClientHandler = new ServerThread(clientSocket);
                             newClientHandler.start();
@@ -131,12 +120,7 @@ public class Launcher {
                     dynamicTable.frame.setVisible(false);
 
                     System.out.println("Running as client");
-//                    Thread threadTask = new Thread(() -> {
                         try {
-//                            while(hosts.size() == 0){
-//                                System.out.println("Waiting for other host to join...");
-//                            }
-
                             System.out.print("most usable one");
                             System.out.println(mostUsableOne.keySet().iterator().next());
 
@@ -164,8 +148,6 @@ public class Launcher {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-//                    });
-//                    threadTask.start();
 
                     lock.notifyAll();
                     try {
@@ -231,32 +213,19 @@ public class Launcher {
             ObjectInputStream inputObjectStream = new ObjectInputStream(inputByteStream);
             HashMap<String, Integer> receivedHashMap = (HashMap<String, Integer>) inputObjectStream.readObject();
 
-
-//            System.out.println("Before merge");
-//            System.out.println(hosts);
-
             hosts.putAll(receivedHashMap);
-
-//            System.out.println("Merged HashMap");
-//            System.out.println(hosts);
-
 
             ArrayList<Map.Entry<String, Integer>> entryList = hashMapToArrayList(hosts);
 
-//            System.out.println("Received data:");
             String mostUsableHost = "";
             int highiestRank = 0;
             for (Map.Entry<String, Integer> entry : entryList) {
-                //System.out.println(entry.getKey() + ": " + entry.getValue());
-
                 if(entry.getValue() > highiestRank){
                     highiestRank = entry.getValue();
                     mostUsableHost = entry.getKey();
                 }
             }
 
-//            System.out.println("Most usable one");
-//            System.out.println(mostUsableHost);
             mostUsableOne.clear();
             mostUsableOne.put(mostUsableHost, highiestRank);
 
@@ -273,7 +242,6 @@ public class Launcher {
 
                 synchronized (lock) {
                     // boolean
-
                     //changeServer = true;
                     lock.notifyAll();
                 }
@@ -282,8 +250,6 @@ public class Launcher {
             // As server - WORKS
             if(isServer && !mostUsableOne.equals(localAddressAndRank)){
                 // Change to client
-
-
                 System.out.println("SERVER TO CLIENT DONE");
 
                 synchronized (lock) {
@@ -295,8 +261,6 @@ public class Launcher {
 
             // As client - WORKS
             if(!isServer && mostUsableOne.equals(localAddressAndRank)){
-
-
                 System.out.println("CLIENT TO SERVER DONE");
 
                 synchronized (lock) {
@@ -388,9 +352,7 @@ public class Launcher {
                 }
             } catch (IOException e) {
                 System.out.println("ERROR EXTERNO DE EXPECIÓN");
-
                 System.out.println(e.getMessage());
-//                throw new RuntimeException(e);
             }
         }
     }
@@ -458,7 +420,4 @@ public class Launcher {
             }
         }
     }
-
-
-
 }
