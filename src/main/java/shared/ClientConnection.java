@@ -73,6 +73,8 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
     public int numCores;
     public long diskCapacity;
 
+    public String strDiskCapacity;
+
     private transient HWDiskStore[] diskStores;
 
     public String osVersion;
@@ -97,6 +99,10 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
 
         HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
         diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
+
+        strDiskCapacity = String.valueOf(diskCapacity);
+        int endIndex = strDiskCapacity.length() - 6; // Calculate the index to end the substring
+        strDiskCapacity = strDiskCapacity.substring(0, endIndex) + " MB";
     }
     public void getCurrentUsage(){
         processorUsage = hardware.getProcessor().getSystemCpuLoad(0) * 100;
@@ -133,7 +139,7 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
 
     public int getRank(ClientConnection cConnection){
         double modelScore = 0.0d;
-        double sOScore = 00.0d;
+        double sOScore = 0.0d;
         double genScore = 0.0d;
         // Define regex patterns for different processor models
         Pattern i9Pattern = Pattern.compile("i9", Pattern.CASE_INSENSITIVE);
