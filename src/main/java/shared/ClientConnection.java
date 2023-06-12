@@ -89,6 +89,8 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
 
     public long RAMUsed;
 
+    public String strRAMUsed;
+
     public void getClientStaticInfo(){
         processorModel = processor.getProcessorIdentifier().getName();
         processorSpeed = processor.getProcessorIdentifier().getVendorFreq() / 1e6;
@@ -135,6 +137,9 @@ public class ClientConnection implements Serializable, Comparable<ClientConnecti
         totalRAM = memory.getTotal();
         availableRAM = memory.getAvailable();
         RAMUsed = totalRAM - availableRAM;
+        strRAMUsed = String.valueOf(RAMUsed);
+        int endIndex = strRAMUsed.length() - 6; // Calculate the index to end the substring
+        strRAMUsed = strRAMUsed.substring(0, endIndex) + " MB";
     }
 
     public int getRank(ClientConnection cConnection){
