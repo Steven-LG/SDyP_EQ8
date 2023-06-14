@@ -17,7 +17,7 @@ public class ThreadExchangeTest {
     private static ObjectOutputStream clientObjOutputStream;
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        ADDRESS = InetAddress.getByName("localhost");
+        ADDRESS = InetAddress.getByName("25.3.224.138");
         clientSocket = new Socket(ADDRESS, PORT);
         while(clientSocket.isConnected()){
             clientObjOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
