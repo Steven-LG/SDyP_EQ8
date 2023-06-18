@@ -5,7 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class LauncherV2 {
+public class LauncherV2__2 {
 
     // Server attributes
     private static ServerSocket serverSocket;
@@ -88,7 +88,7 @@ public class LauncherV2 {
                 }
             }
         });
-        serverThread.start();
+//        serverThread.start();
 
         Thread serverStartEmitter = new Thread(()->{
             try {
@@ -102,7 +102,7 @@ public class LauncherV2 {
                 System.out.println("SERVER EMITTER UNLOCKED SERVER");
             }
         });
-        serverStartEmitter.start();
+//        serverStartEmitter.start();
 
         Thread stopTimerThread = new Thread(()->{
             try {
@@ -144,7 +144,7 @@ public class LauncherV2 {
                 clientLock.notifyAll();
             }
         });
-        //startClientEmitter.start();
+        startClientEmitter.start();
 
         Thread changeToServerListenerThread = new Thread(()->{
             try {
@@ -168,12 +168,12 @@ public class LauncherV2 {
         });
         //changeToServerListenerThread.start();
 
-//        System.out.println("Waiting for client unlock");
-//        synchronized (clientLock){
-//            clientLock.wait();
-//        }
-//        System.out.println("Client socket unlocked");
-//        changeClientSocket(mostUsableServer, 5555);
+        System.out.println("Waiting for client unlock");
+        synchronized (clientLock){
+            clientLock.wait();
+        }
+        System.out.println("Client socket unlocked");
+        changeClientSocket(mostUsableServer, 5555);
 
         /*
         * To stop server
@@ -291,7 +291,7 @@ public class LauncherV2 {
             }
 
             // Change from client to server
-            if((clientThread.isAlive() && clientThread != null) && mostUsableOne.equals(localAddressAndRank)){
+            if(clientThread.isAlive() && mostUsableOne.equals(localAddressAndRank)){
                 System.out.println("CLIENT TO SERVER TRIGGERED");
 
                 //Stop client and launch server
@@ -462,8 +462,6 @@ public class LauncherV2 {
                         if (!clientSocket.isConnected()) {
                             System.out.println("Client disconnected");
 
-                            hostsInfo.remove(receivedClientSpecs.ipAddress);
-                            dynamicTable.registers.remove(receivedClientSpecs);
                             clientSocket.close();
                             break;
                         }
@@ -476,8 +474,6 @@ public class LauncherV2 {
                             System.out.println(e.getMessage().toUpperCase() + " - " + clientAssignedToThread.ipAddress);
                         }
                         clientSocket.close();
-                        hostsInfo.remove(clientAssignedToThread.ipAddress);
-                        dynamicTable.registers.remove(clientAssignedToThread);
                         break;
 
                     }
