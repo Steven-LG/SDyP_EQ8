@@ -4,6 +4,7 @@ import visuals.DynamicTable;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LauncherV2__2 {
 
@@ -36,14 +37,14 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
     private static Integer rank = 10;
-    private static HashMap<String, Integer> hosts;
+    private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;
     private static HashMap<String, Integer> mostUsableOne = new HashMap<>();
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        hosts = new HashMap<>();
+        hosts = new ConcurrentHashMap<>();
         serverHostSpecs = new HostSpecs();
         hostsInfo = new HashMap<String, Integer>(){};
         hostIP = InetAddress.getLocalHost().getHostAddress();
@@ -196,33 +197,46 @@ public class LauncherV2__2 {
     // Launcher Methods
     public static void UDPEmitter() throws IOException, InterruptedException {
         hosts.put(hostIP, rank);
-
-        ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-        ObjectOutputStream outputObjectStream = new ObjectOutputStream(outputByteStream);
-
-        outputObjectStream.writeObject(hosts);
-        outputObjectStream.flush();
-        byte[] dataToSend = outputByteStream.toByteArray();
-
-        InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
-        int destinationPort = UDP_COMMUNICATION_PORT;
-
-        // Socket creation
-        DatagramSocket UDPSocket = new DatagramSocket();
-        DatagramPacket UDPPacket = new DatagramPacket(
-                dataToSend,
-                dataToSend.length,
-                broadcastAddress,
-                destinationPort
-        );
+        
+        Thread changeRankThread = new Thread(()->{
+            try {
+                Thread.sleep(7000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            hosts.put(hostIP, -1);
+            System.out.println("NEGATIVE RANK UPDATED");
+            System.out.println(hosts);
+        });
+        changeRankThread.start();
 
         while(true){
+            ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
+            ObjectOutputStream outputObjectStream = new ObjectOutputStream(outputByteStream);
+
+            outputObjectStream.writeObject(new HashMap<>(hosts));
+            outputObjectStream.flush();
+            byte[] dataToSend = outputByteStream.toByteArray();
+
+            InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
+            int destinationPort = UDP_COMMUNICATION_PORT;
+
+            // Socket creation
+            DatagramSocket UDPSocket = new DatagramSocket();
+            DatagramPacket UDPPacket = new DatagramPacket(
+                    dataToSend,
+                    dataToSend.length,
+                    broadcastAddress,
+                    destinationPort
+            );
+
             UDPSocket.send(UDPPacket);
             System.out.println("UDP Emitter : Packet sent. ");
+            Thread.sleep(2000);
         }
     }
     public static void UDPListener() throws IOException, ClassNotFoundException, InterruptedException {
-        hosts.put(hostIP, rank);
+        //hosts.put(hostIP, rank);
 
         byte[] receiveDataBuffer = new byte[1024];
 
@@ -253,9 +267,9 @@ public class LauncherV2__2 {
                     mostUsableHost = entry.getKey();
                 }
 
-                if(entry.getValue() == -1){
-                    hosts.remove(entry.getKey());
-                }
+//                if(entry.getValue() == -1){
+//                    hosts.remove(entry.getKey());
+//                }
             }
 
             System.out.println("Received hosts info by UDP");
@@ -333,7 +347,7 @@ public class LauncherV2__2 {
 //            }
         }
     }
-    public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(HashMap<String, Integer> receivedHashMap){
+    public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(ConcurrentHashMap<String, Integer> receivedHashMap){
         // HashMap sorting
         ArrayList<Map.Entry<String, Integer>> entryList = new ArrayList<>(receivedHashMap.entrySet());
         Collections.sort(entryList, new Comparator<Map.Entry<String, Integer>>() {
