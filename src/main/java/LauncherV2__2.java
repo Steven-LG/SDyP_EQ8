@@ -67,11 +67,16 @@ public class LauncherV2__2 {
             try {
                 UDPListener();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
+                System.out.println(Thread.currentThread().getName()+" "+e.getMessage().toUpperCase());
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
+                System.out.println(Thread.currentThread().getName()+" "+e.getMessage().toUpperCase());
+
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
+                System.out.println(Thread.currentThread().getName()+" "+e.getMessage().toUpperCase());
+
             }
         });
         UDPListenerThread.start();
@@ -173,7 +178,7 @@ public class LauncherV2__2 {
             clientLock.wait();
         }
         System.out.println("Client socket unlocked");
-        changeClientSocket(mostUsableServer, 5555);
+        changeClientSocket(InetAddress.getByName("25.59.42.149"), 5555);
 
         /*
         * To stop server
@@ -265,53 +270,58 @@ public class LauncherV2__2 {
                 lastOptimalOne = mostUsableOne;
                 System.out.println("LAST OPTIMAL ONE CHANGED");
 
-                clientThread.interrupt();
-                if(cSocket.isConnected()){
-                    clientObjectOutputStream.close();
-                    cSocket.close();
-                }
-                System.out.println("NEW SERVER BOUT TO BE LAUNCHED");
-                Thread.sleep(2000);
-
-                // CHANGE HERE
-                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+//                clientThread.interrupt();
+//                if(cSocket.isConnected()){
+//                    clientObjectOutputStream.close();
+//                    cSocket.close();
+//                }
+//                System.out.println("NEW SERVER BOUT TO BE LAUNCHED");
+//                Thread.sleep(2000);
+//
+//                // CHANGE HERE
+//                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
             }
 
             // as Server
             // Change to client
-            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
-                stopServer();
+//            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
+//                stopServer();
+//
+//                // CHANGE
+//                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+//                Thread.sleep(2000);
+//                synchronized (clientLock){
+//                    clientLock.notifyAll();
+//                }
+//            }
 
-                // CHANGE
-                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
-                Thread.sleep(2000);
-                synchronized (clientLock){
-                    clientLock.notifyAll();
-                }
-            }
+
 
             // Change from client to server
-            if(clientThread.isAlive() && mostUsableOne.equals(localAddressAndRank)){
-                System.out.println("CLIENT TO SERVER TRIGGERED");
+//            if((clientThread.isAlive() && !clientThread.equals(null)) && mostUsableOne.equals(localAddressAndRank)){
+//                System.out.println("CLIENT TO SERVER TRIGGERED");
+//
+//                //Stop client and launch server
+//                clientThread.interrupt();
+//                if(cSocket.isConnected()){
+//                    clientObjectOutputStream.close();
+//                    cSocket.close();
+//                }
+//
+//                createNewServer();
+//                try {
+//                    Thread.sleep(500);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                synchronized (serverLock){
+//                    serverLock.notifyAll();
+//                    System.out.println("SERVER EMITTER UNLOCKED SERVER");
+//                }
+//            }
 
-                //Stop client and launch server
-                clientThread.interrupt();
-                if(cSocket.isConnected()){
-                    clientObjectOutputStream.close();
-                    cSocket.close();
-                }
 
-                createNewServer();
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                synchronized (serverLock){
-                    serverLock.notifyAll();
-                    System.out.println("SERVER EMITTER UNLOCKED SERVER");
-                }
-            }
+
 
 //            if(!isServer && !lastOptimalOne.equals(mostUsableOne)){
 //                // Change socket
