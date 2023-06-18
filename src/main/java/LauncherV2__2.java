@@ -219,7 +219,6 @@ public class LauncherV2__2 {
         while(true){
             UDPSocket.send(UDPPacket);
             System.out.println("UDP Emitter : Packet sent. ");
-            Thread.sleep(2000);
         }
     }
     public static void UDPListener() throws IOException, ClassNotFoundException, InterruptedException {
@@ -252,6 +251,10 @@ public class LauncherV2__2 {
                 if(entry.getValue() > highiestRank){
                     highiestRank = entry.getValue();
                     mostUsableHost = entry.getKey();
+                }
+
+                if(entry.getValue() == -1){
+                    hosts.remove(entry.getKey());
                 }
             }
 
