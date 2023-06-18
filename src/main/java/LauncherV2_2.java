@@ -1,13 +1,8 @@
 import shared.HostSpecs;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class LauncherV2_2 {
 
@@ -17,6 +12,7 @@ public class LauncherV2_2 {
     private static Object serverLock = new Object();
     private static ArrayList<ServerThread> currentServerHandlers = new ArrayList<ServerThread>();
     private static Thread serverThread;
+    private static HostSpecs serverHostSpecs;
 
     // Client attributes
     private static ObjectOutputStream clientObjectOutputStream;
@@ -29,23 +25,62 @@ public class LauncherV2_2 {
             throw new RuntimeException(e);
         }
     }
-
     private static Thread clientThread;
     private static Object clientLock = new Object();
+
+    // Launcher attributes
+    private static HashMap<String, Integer> hostsInfo;
+    private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
+    private static String hostIP;
+    private static Integer rank = 10;
+    private static HashMap<String, Integer> hosts;
+    private static final int UDP_COMMUNICATION_PORT = 1234;
+    private static HashMap<String, Integer> mostUsableOne = new HashMap<>();
+    private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();
+
     public static void main(String[] args) throws InterruptedException, IOException {
-        serverThread = new Thread(()->{
-            while(true){
-                try {
-                    startServer();
-                } catch (IOException e) {
-                    System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
-                }
-                if(Thread.currentThread().isInterrupted()){
-                    break;
-                }
+        hosts = new HashMap<>();
+        serverHostSpecs = new HostSpecs();
+        hostsInfo = new HashMap<String, Integer>(){};
+        hostIP = "200.300.400.500";
+        localAddressAndRank.put(hostIP, rank);
+
+        Thread UDPEmitterThread = new Thread(() -> {
+            try {
+                UDPEmitter();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         });
-        serverThread.start();
+        UDPEmitterThread.start();
+
+        Thread UDPListenerThread = new Thread(()->{
+            try {
+                UDPListener();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        UDPListenerThread.start();
+
+
+//        serverThread = new Thread(()->{
+//            while(true){
+//                try {
+//                    startServer();
+//                } catch (IOException e) {
+//                    System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
+//                }
+//                if(Thread.currentThread().isInterrupted()){
+//                    break;
+//                }
+//            }
+//        });
+//        serverThread.start();
 
         Thread serverStartEmitter = new Thread(()->{
             try {
@@ -59,7 +94,7 @@ public class LauncherV2_2 {
                 System.out.println("SERVER EMITTER UNLOCKED SERVER");
             }
         });
-        serverStartEmitter.start();
+        //serverStartEmitter.start();
 
         Thread stopTimerThread = new Thread(()->{
             try {
@@ -125,12 +160,12 @@ public class LauncherV2_2 {
         });
         //changeToServerListenerThread.start();
 
-        System.out.println("Waiting for client unlock");
-        synchronized (clientLock){
-            clientLock.wait();
-        }
-        System.out.println("Client socket unlocked");
-        changeClientSocket(mostUsableServer, 5555);
+//        System.out.println("Waiting for client unlock");
+//        synchronized (clientLock){
+//            clientLock.wait();
+//        }
+//        System.out.println("Client socket unlocked");
+        //changeClientSocket(mostUsableServer, 5555);
 
         /*
         * To stop server
@@ -145,6 +180,139 @@ public class LauncherV2_2 {
         */
     }
 
+    // Launcher Methods
+    public static void UDPEmitter() throws IOException, InterruptedException {
+        hosts.put(hostIP, rank);
+
+        ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
+        ObjectOutputStream outputObjectStream = new ObjectOutputStream(outputByteStream);
+
+        outputObjectStream.writeObject(hosts);
+        outputObjectStream.flush();
+        byte[] dataToSend = outputByteStream.toByteArray();
+
+        InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
+        int destinationPort = UDP_COMMUNICATION_PORT;
+
+        // Socket creation
+        DatagramSocket UDPSocket = new DatagramSocket();
+        DatagramPacket UDPPacket = new DatagramPacket(
+                dataToSend,
+                dataToSend.length,
+                broadcastAddress,
+                destinationPort
+        );
+
+        while(true){
+            UDPSocket.send(UDPPacket);
+            System.out.println("UDP Emitter : Packet sent. ");
+            Thread.sleep(2000);
+        }
+    }
+    public static void UDPListener() throws IOException, ClassNotFoundException {
+        hosts.put(hostIP, rank);
+
+        byte[] receiveDataBuffer = new byte[1024];
+
+        int UDPReceiverPort = UDP_COMMUNICATION_PORT;
+
+        DatagramSocket UDPSocket = new DatagramSocket(UDPReceiverPort);
+        DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
+
+        while(true){
+            UDPSocket.receive(UDPPacket);
+
+            byte[] receivedBytes = UDPPacket.getData();
+
+            // Deserialize into a hashmap
+            ByteArrayInputStream inputByteStream = new ByteArrayInputStream(receivedBytes);
+            ObjectInputStream inputObjectStream = new ObjectInputStream(inputByteStream);
+            HashMap<String, Integer> receivedHashMap = (HashMap<String, Integer>) inputObjectStream.readObject();
+
+            hosts.putAll(receivedHashMap);
+
+            ArrayList<Map.Entry<String, Integer>> entryList = hashMapToArrayList(hosts);
+
+            String mostUsableHost = "";
+            int highiestRank = 0;
+            for (Map.Entry<String, Integer> entry : entryList) {
+                if(entry.getValue() > highiestRank){
+                    highiestRank = entry.getValue();
+                    mostUsableHost = entry.getKey();
+                }
+            }
+
+            System.out.println("Received hosts info by UDP");
+            System.out.println(hosts);
+            System.out.println();
+
+            mostUsableOne.clear();
+            mostUsableOne.put(mostUsableHost, highiestRank);
+
+            if(lastOptimalOne.isEmpty()){
+                lastOptimalOne.put(mostUsableHost, highiestRank);
+            }
+
+//            if(!lastOptimalOne.equals(mostUsableOne)){
+//                lastOptimalOne = mostUsableOne;
+//
+//                System.out.println("LAST OPTIMAL ONE CHANGED");
+//
+//                serverSocket.close();
+//
+//                synchronized (lock) {
+//                    // boolean
+//                    //changeServer = true;
+//                    lock.notifyAll();
+//                }
+//            }
+//
+//            // As server - WORKS
+//            if(isServer && !mostUsableOne.equals(localAddressAndRank)){
+//                // Change to client
+//                System.out.println("SERVER TO CLIENT DONE");
+//
+//                synchronized (lock) {
+//                    isServer = false;
+//                    // boolean
+//                    lock.notifyAll();
+//                }
+//            }
+//
+//            // As client - WORKS
+//            if(!isServer && mostUsableOne.equals(localAddressAndRank)){
+//                System.out.println("CLIENT TO SERVER DONE");
+//
+//                synchronized (lock) {
+//                    // boolean
+//                    // Change to server
+//                    isServer = true;
+//                    changeServer = false;
+//
+//                    lock.notifyAll();
+//                }
+//            }
+//
+//            if(!isServer && !lastOptimalOne.equals(mostUsableOne)){
+//                // Change socket
+//                changeServer = true;
+//                System.out.println("CHANGE SERVER AS A CLIENT DONE");
+//            }
+        }
+    }
+    public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(HashMap<String, Integer> receivedHashMap){
+        // HashMap sorting
+        ArrayList<Map.Entry<String, Integer>> entryList = new ArrayList<>(receivedHashMap.entrySet());
+        Collections.sort(entryList, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> entry1, Map.Entry<String, Integer> entry2) {
+                // Comparar los valores de las entradas en orden descendente
+                return entry2.getValue().compareTo(entry1.getValue());
+            }
+        });
+
+        return entryList;
+    }
     // Server Methods
     public static void startServer() throws IOException {
         System.out.println("Server waiting for unlock");

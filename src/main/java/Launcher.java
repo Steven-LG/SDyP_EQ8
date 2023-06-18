@@ -19,7 +19,7 @@ public class Launcher {
 
     private static Integer rank = 10;
     private static final int PORT = 1234;
-    private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();;
+    private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();;
     private static HashMap<String, Integer> mostUsableOne = new HashMap<>();;
     private static boolean changeServer = false;
@@ -164,7 +164,6 @@ public class Launcher {
     }
 
     public static void UDPEmitter() throws IOException, InterruptedException {
-
         hosts.put(hostIP, rank);
 
         ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
