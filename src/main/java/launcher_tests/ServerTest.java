@@ -1,3 +1,5 @@
+package launcher_tests;
+
 import shared.HostSpecs;
 
 import java.io.IOException;
@@ -5,9 +7,9 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ServerTest2 {
+public class ServerTest {
     private static ServerSocket serverSocket;
-    private static final int SERVER_PORT = 5556;
+    private static final int SERVER_PORT = 5555;
     public static void main(String[] args) throws IOException {
 
         System.out.println("Waiting for connection...");
