@@ -60,7 +60,7 @@ public class DynamicTable {
                             hostInfo.processorSpeed + " GHz",
                             hostInfo.numCores,
                             (int) Math.floor(hostInfo.processorUsage)+ "%",
-                            hostInfo.strDiskCapacity,
+                            hostInfo.strDiskCapacity + "%",
                             hostInfo.strRAMUsed,
                             hostInfo.osVersion,
                             hostInfo.rank,

@@ -7,6 +7,9 @@ import oshi.hardware.HWDiskStore;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.software.os.OperatingSystem;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -64,12 +67,21 @@ public class HostSpecs implements Serializable {
         OperatingSystem os = systemInfo.getOperatingSystem();
         osVersion = String.valueOf(os.getVersionInfo());
 
-        HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
-        diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
+        double diskUsage = 0;
+        try {
+            diskUsage = getSystemDiskUsage();
+            strDiskCapacity = String.valueOf(diskUsage);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        strDiskCapacity = String.valueOf(diskCapacity);
-        int endIndex = strDiskCapacity.length() - 6; // Calculate the index to end the substring
-        strDiskCapacity = strDiskCapacity.substring(0, endIndex) + " MB";
+//        HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
+//        diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
+//
+//        strDiskCapacity = String.valueOf(diskCapacity);
+//        strDiskCapacity = String.valueOf(diskUsage);
+//        int endIndex = strDiskCapacity.length() - 6; // Calculate the index to end the substring
+//        strDiskCapacity = strDiskCapacity.substring(0, endIndex) + " MB";
     }
     public void getCurrentUsage() throws UnknownHostException {
         ipAddress = InetAddress.getLocalHost().getHostAddress();
@@ -77,13 +89,32 @@ public class HostSpecs implements Serializable {
         //processorUsage = hardware.getProcessor().getSystemCpuLoad(0) * 100;
 
         //Get CPU usage
-        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        if (osBean instanceof com.sun.management.OperatingSystemMXBean) {
-            com.sun.management.OperatingSystemMXBean sunOsBean = (com.sun.management.OperatingSystemMXBean) osBean;
-            double cpuUsage = sunOsBean.getSystemCpuLoad() * 100;
+//        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+//        if (osBean instanceof com.sun.management.OperatingSystemMXBean) {
+//            com.sun.management.OperatingSystemMXBean sunOsBean = (com.sun.management.OperatingSystemMXBean) osBean;
+//            double cpuUsage = sunOsBean.getSystemCpuLoad() * 100;
+//            processorUsage = cpuUsage;
+//        } else {
+//            System.out.println("Unsupported operating system.");
+//        }
+
+
+        double cpuUsage = 0;
+        try {
+            cpuUsage = getSystemCpuUsage();
             processorUsage = cpuUsage;
-        } else {
-            System.out.println("Unsupported operating system.");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        double memoryUsage = 0;
+        try {
+            memoryUsage = getSystemMemoryUsage();
+            RAMUsed = (long) memoryUsage;
+            strRAMUsed = String.valueOf(RAMUsed) + "%";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
@@ -103,12 +134,79 @@ public class HostSpecs implements Serializable {
         GlobalMemory memory = hardware.getMemory();
         totalRAM = memory.getTotal();
         availableRAM = memory.getAvailable();
-        RAMUsed = totalRAM - availableRAM;
-        strRAMUsed = String.valueOf(RAMUsed);
-        int endIndex = strRAMUsed.length() - 6; // Calculate the index to end the substring
-        strRAMUsed = strRAMUsed.substring(0, endIndex) + " MB";
+//        RAMUsed = totalRAM - availableRAM;
+//        strRAMUsed = String.valueOf(RAMUsed);
+//        int endIndex = strRAMUsed.length() - 6; // Calculate the index to end the substring
+//        strRAMUsed += " MB";
         rank = getRank();
         timer = new Date(System.currentTimeMillis());
+    }
+
+    private static double getSystemCpuUsage() throws IOException {
+        String command = "wmic cpu get loadpercentage /value";
+        Process process = Runtime.getRuntime().exec(command);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        double cpuUsage = 0.0;
+
+        while ((line = reader.readLine()) != null) {
+            if (line.trim().startsWith("LoadPercentage=")) {
+                String value = line.trim().substring("LoadPercentage=".length());
+                if (!value.isEmpty()) {
+                    cpuUsage = Double.parseDouble(value);
+                }
+                break;
+            }
+        }
+
+        return cpuUsage;
+    }
+
+    private static double getSystemMemoryUsage() throws IOException {
+        String command = "wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value";
+        Process process = Runtime.getRuntime().exec(command);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        double freeMemory = 0.0;
+        double totalMemory = 0.0;
+
+        while ((line = reader.readLine()) != null) {
+            if (line.trim().startsWith("FreePhysicalMemory=")) {
+                String freeMemoryStr = line.trim().substring("FreePhysicalMemory=".length());
+                freeMemory = Double.parseDouble(freeMemoryStr);
+            } else if (line.trim().startsWith("TotalVisibleMemorySize=")) {
+                String totalMemoryStr = line.trim().substring("TotalVisibleMemorySize=".length());
+                totalMemory = Double.parseDouble(totalMemoryStr);
+            }
+        }
+
+        double memoryUsage = (totalMemory - freeMemory) / totalMemory * 100;
+        return Math.round(memoryUsage * 100.0) / 100.0;
+    }
+
+    private static double getSystemDiskUsage() throws IOException {
+        String command = "wmic logicaldisk get FreeSpace,Size /value";
+        Process process = Runtime.getRuntime().exec(command);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        double freeSpace = 0.0;
+        double totalSpace = 0.0;
+
+        while ((line = reader.readLine()) != null) {
+            if (line.trim().startsWith("FreeSpace=")) {
+                String freeSpaceStr = line.trim().substring("FreeSpace=".length());
+                freeSpace += Double.parseDouble(freeSpaceStr);
+            } else if (line.trim().startsWith("Size=")) {
+                String totalSpaceStr = line.trim().substring("Size=".length());
+                totalSpace += Double.parseDouble(totalSpaceStr);
+            }
+        }
+
+        double diskUsage = (totalSpace - freeSpace) / totalSpace * 100;
+        return Math.round(diskUsage * 100.0) / 100.0;
     }
 
     private int getRank(){
