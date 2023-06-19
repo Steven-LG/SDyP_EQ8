@@ -98,7 +98,7 @@ public class LauncherV2__2 {
 
         Thread serverStartEmitter = new Thread(()->{
             try {
-                Thread.sleep(2000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -179,7 +179,7 @@ public class LauncherV2__2 {
             clientLock.wait();
         }
         System.out.println("Client socket unlocked");
-        changeClientSocket(InetAddress.getByName("25.59.42.149"), 5555);
+        changeClientSocket(InetAddress.getByName("localhost"), 5555);
 
         /*
         * To stop server
@@ -197,7 +197,7 @@ public class LauncherV2__2 {
     // Launcher Methods
     public static void UDPEmitter() throws IOException, InterruptedException {
         hosts.put(hostIP, rank);
-        
+
         Thread changeRankThread = new Thread(()->{
             try {
                 Thread.sleep(7000);
@@ -208,7 +208,7 @@ public class LauncherV2__2 {
             System.out.println("NEGATIVE RANK UPDATED");
             System.out.println(hosts);
         });
-        changeRankThread.start();
+        //changeRankThread.start();
 
         while(true){
             ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
@@ -241,11 +241,11 @@ public class LauncherV2__2 {
         byte[] receiveDataBuffer = new byte[1024];
 
         int UDPReceiverPort = UDP_COMMUNICATION_PORT;
-
         DatagramSocket UDPSocket = new DatagramSocket(UDPReceiverPort);
-        DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
 
         while(true){
+            DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
+
             UDPSocket.receive(UDPPacket);
 
             byte[] receivedBytes = UDPPacket.getData();
@@ -267,9 +267,9 @@ public class LauncherV2__2 {
                     mostUsableHost = entry.getKey();
                 }
 
-//                if(entry.getValue() == -1){
-//                    hosts.remove(entry.getKey());
-//                }
+                if(entry.getValue() == -1){
+                    hosts.remove(entry.getKey());
+                }
             }
 
             System.out.println("Received hosts info by UDP");
@@ -286,65 +286,62 @@ public class LauncherV2__2 {
             if(!lastOptimalOne.equals(mostUsableOne)){
                 lastOptimalOne = mostUsableOne;
                 System.out.println("LAST OPTIMAL ONE CHANGED");
-
-//                clientThread.interrupt();
-//                if(cSocket.isConnected()){
-//                    clientObjectOutputStream.close();
-//                    cSocket.close();
-//                }
-//                System.out.println("NEW SERVER BOUT TO BE LAUNCHED");
-//                Thread.sleep(2000);
-//
-//                // CHANGE HERE
-//                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
             }
 
-            // as Server
-            // Change to client
+            // Server to Client - WORKS
 //            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
-//                stopServer();
-//
-//                // CHANGE
-//                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
-//                Thread.sleep(2000);
-//                synchronized (clientLock){
-//                    clientLock.notifyAll();
-//                }
-//            }
+            if(!mostUsableOne.equals(localAddressAndRank)){
+                stopServer();
 
+                // CHANGE
+                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+                Thread.sleep(2000);
+                synchronized (clientLock){
+                    clientLock.notifyAll();
+                }
+            }
 
-
-            // Change from client to server
+            // Client to Server - WORKS
 //            if((clientThread.isAlive() && !clientThread.equals(null)) && mostUsableOne.equals(localAddressAndRank)){
-//                System.out.println("CLIENT TO SERVER TRIGGERED");
-//
-//                //Stop client and launch server
-//                clientThread.interrupt();
-//                if(cSocket.isConnected()){
-//                    clientObjectOutputStream.close();
-//                    cSocket.close();
-//                }
-//
-//                createNewServer();
-//                try {
-//                    Thread.sleep(500);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//                synchronized (serverLock){
-//                    serverLock.notifyAll();
-//                    System.out.println("SERVER EMITTER UNLOCKED SERVER");
-//                }
-//            }
+            if(mostUsableOne.equals(localAddressAndRank)){
+                System.out.println("CLIENT TO SERVER TRIGGERED");
 
+                clientThread.interrupt();
+                if(cSocket.isConnected()){
+                    clientObjectOutputStream.close();
+                    cSocket.close();
+                }
 
+                createNewServer();
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                synchronized (serverLock){
+                    serverLock.notifyAll();
+                    System.out.println("SERVER EMITTER UNLOCKED SERVER");
+                }
+            }
 
+            // Redirection as a Client from Server A to Server B - WORKS
+            if(clientThread.isAlive() && !lastOptimalOne.equals(mostUsableOne)){
+//            if(!lastOptimalOne.equals(mostUsableOne)){
+                System.out.println("CHANGE SERVER AS A CLIENT DONE");
 
-//            if(!isServer && !lastOptimalOne.equals(mostUsableOne)){
-//                // Change socket
-//                changeServer = true;
-//                System.out.println("CHANGE SERVER AS A CLIENT DONE");
-//            }
+                clientThread.interrupt();
+                if(cSocket.isConnected()){
+                    clientObjectOutputStream.close();
+                    cSocket.close();
+                }
+                System.out.println("NEW SERVER BOUT TO BE LAUNCHED");
+                Thread.sleep(2000);
+
+                // CHANGE HERE
+                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+//                changeClientSocket(InetAddress.getByName("localhost"), 5556);
+
+            }
         }
     }
     public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(ConcurrentHashMap<String, Integer> receivedHashMap){
@@ -523,7 +520,7 @@ public class LauncherV2__2 {
         newServer.start();
     }
     public static void stopServer() throws IOException {
-        if(serverThread == null){
+        if(serverThread == null || serverSocket == null){
             return;
         }
         serverThread.interrupt();
@@ -581,12 +578,6 @@ public class LauncherV2__2 {
             System.out.println("Object sent");
             clientObjectOutputStream.flush();
             Thread.sleep(1000);
-
-//            if(changeServer.get()){
-//                break;
-//            }
-
-
         }
     }
 
