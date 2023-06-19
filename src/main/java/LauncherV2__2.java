@@ -326,7 +326,13 @@ public class LauncherV2__2 {
             System.out.println();
 
             if(!lastOptimalOne.equals(mostUsableOne)){
-                lastOptimalOne = mostUsableOne;
+//                lastOptimalOne = mostUsableOne.keySet().iterator().next();
+
+                for (HashMap.Entry<String, Integer> entry : mostUsableOne.entrySet()) {
+                    String key = entry.getKey();
+                    Integer value = entry.getValue();
+                    lastOptimalOne.put(key, value);
+                }
                 System.out.println("LAST OPTIMAL ONE CHANGED");
 
 
