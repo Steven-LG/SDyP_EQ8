@@ -39,7 +39,7 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> hostsInfo;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
-    private static Integer rank = 5;
+    private static Integer rank = 2;
     private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;
@@ -277,26 +277,28 @@ public class LauncherV2__2 {
 
 
             //PERA
+            LocalTime currentTime = LocalTime.now();
+            try{
+                for (Map.Entry<String, LocalTime> entry : hostsTimeRegister.entrySet()) {
+                    Duration difference = Duration.between(currentTime, entry.getValue()).abs();
+                    System.out.println(entry.getKey() + " -> " + difference.toSeconds());
+
+                    if(difference.toSeconds() >= 7){
+                        hosts.remove(entry.getKey());
+                        hostsTimeRegister.remove(entry.getKey());
+                    }
+                }
+            }catch (Exception e){
+                System.out.println(e.getMessage().toUpperCase() + " - " + "hostsTimeRegister loop");
+            }
 
             ArrayList<Map.Entry<String, Integer>> entryList = hashMapToArrayList(hosts);
-
             String mostUsableHost = "";
             int highiestRank = 0;
             for (Map.Entry<String, Integer> entry : entryList) {
                 if(entry.getValue() > highiestRank){
                     highiestRank = entry.getValue();
                     mostUsableHost = entry.getKey();
-                }
-            }
-
-            LocalTime currentTime = LocalTime.now();
-            for (Map.Entry<String, LocalTime> entry : hostsTimeRegister.entrySet()) {
-                Duration difference = Duration.between(currentTime, entry.getValue()).abs();
-                System.out.println(entry.getKey() + " -> " + difference.toSeconds());
-
-                if(difference.toSeconds() > 7){
-                    hosts.remove(entry.getKey());
-                    hostsTimeRegister.remove(entry.getKey());
                 }
             }
 
@@ -314,6 +316,14 @@ public class LauncherV2__2 {
             if(lastOptimalOne.isEmpty()){
                 lastOptimalOne.put(mostUsableHost, highiestRank);
             }
+
+            System.out.println("MOST USABLE ONE");
+            System.out.println(mostUsableOne.keySet().iterator().next());
+            System.out.println();
+
+            System.out.println("LAST OPTIMAL ONE");
+            System.out.println(lastOptimalOne.keySet().iterator().next());
+            System.out.println();
 
             if(!lastOptimalOne.equals(mostUsableOne)){
                 lastOptimalOne = mostUsableOne;
@@ -363,7 +373,7 @@ public class LauncherV2__2 {
                             clientObjectOutputStream.close();
                             cSocket.close();
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            //throw new RuntimeException(e);
                         }
                     }
 
