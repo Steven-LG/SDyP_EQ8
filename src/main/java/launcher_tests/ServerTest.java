@@ -11,7 +11,6 @@ public class ServerTest {
     private static ServerSocket serverSocket;
     private static final int SERVER_PORT = 5555;
     public static void main(String[] args) throws IOException {
-
         System.out.println("Waiting for connection...");
         try {
             serverSocket = new ServerSocket(SERVER_PORT);
