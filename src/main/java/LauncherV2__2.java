@@ -174,12 +174,12 @@ public class LauncherV2__2 {
         });
         //changeToServerListenerThread.start();
 
-        System.out.println("Waiting for client unlock");
-        synchronized (clientLock){
-            clientLock.wait();
-        }
-        System.out.println("Client socket unlocked");
-        changeClientSocket(InetAddress.getByName("localhost"), 5555);
+//        System.out.println("Waiting for client unlock");
+//        synchronized (clientLock){
+//            clientLock.wait();
+//        }
+//        System.out.println("Client socket unlocked");
+//        changeClientSocket(InetAddress.getByName("localhost"), 5555);
 
         /*
         * To stop server
@@ -306,8 +306,10 @@ public class LauncherV2__2 {
             if(mostUsableOne.equals(localAddressAndRank)){
                 System.out.println("CLIENT TO SERVER TRIGGERED");
 
-                clientThread.interrupt();
-                if(cSocket.isConnected()){
+                if(clientThread != null){
+                    clientThread.interrupt();
+                }
+                if((cSocket != null) && cSocket.isConnected()){
                     clientObjectOutputStream.close();
                     cSocket.close();
                 }
