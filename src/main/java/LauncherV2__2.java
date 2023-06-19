@@ -3,12 +3,11 @@ import visuals.DynamicTable;
 
 import java.io.*;
 import java.net.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LauncherV2__2 {
 
@@ -251,6 +250,7 @@ public class LauncherV2__2 {
 
         int UDPReceiverPort = UDP_COMMUNICATION_PORT;
         DatagramSocket UDPSocket = new DatagramSocket(UDPReceiverPort);
+        AtomicBoolean clientToServerDone = new AtomicBoolean(false);
 
         while(true){
             DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
@@ -323,6 +323,7 @@ public class LauncherV2__2 {
                 // Server to Client - WORKS
 //            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
                 if(!mostUsableOne.equals(localAddressAndRank)){
+                    clientToServerDone.set(false);
                     System.out.println("Server to Client - USE CASE");
                     Thread useCase1 = new Thread(()->{
                         System.out.println("USE CASE 1 THREAD LAUNCHED");
@@ -348,37 +349,38 @@ public class LauncherV2__2 {
 
             // Client to Server - WORKS
 //            if((clientThread != (null) && clientThread.isAlive()) && mostUsableOne.equals(localAddressAndRank)){
-////            if(mostUsableOne.equals(localAddressAndRank)){
-//                System.out.println("CLIENT TO SERVER TRIGGERED");
-//
-//                Thread useCase2 = new Thread(()->{
-//                    System.out.println(Thread.currentThread().getName() + " // " + " NEW SERVER");
-//                    if(clientThread != null){
-//                        clientThread.interrupt();
-//                    }
-//
-//                    if((cSocket != null) && cSocket.isConnected()){
-//                        try {
-//                            clientObjectOutputStream.close();
-//                            cSocket.close();
-//                        } catch (IOException e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                    }
-//
-//                    createNewServer();
-//                    try {
-//                        Thread.sleep(500);
-//                    } catch (InterruptedException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    synchronized (serverLock){
-//                        serverLock.notifyAll();
-//                        System.out.println("SERVER EMITTER UNLOCKED SERVER");
-//                    }
-//                });
-//                useCase2.start();
-//            }
+            if(!clientToServerDone.get() && mostUsableOne.equals(localAddressAndRank)){
+                System.out.println("CLIENT TO SERVER TRIGGERED");
+
+                Thread useCase2 = new Thread(()->{
+                    System.out.println(Thread.currentThread().getName() + " // " + " NEW SERVER");
+                    if(clientThread != null){
+                        clientThread.interrupt();
+                    }
+
+                    if((cSocket != null) && cSocket.isConnected()){
+                        try {
+                            clientObjectOutputStream.close();
+                            cSocket.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    createNewServer();
+                    clientToServerDone.set(true);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    synchronized (serverLock){
+                        serverLock.notifyAll();
+                        System.out.println("SERVER EMITTER UNLOCKED SERVER");
+                    }
+                });
+                useCase2.start();
+            }
 
         }
     }
