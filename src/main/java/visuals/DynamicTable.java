@@ -57,11 +57,11 @@ public class DynamicTable {
                     new Object[]{
                             hostInfo.ipAddress,
                             hostInfo.processorModel,
-                            hostInfo.processorSpeed,
+                            hostInfo.processorSpeed + " GHz",
                             hostInfo.numCores,
-                            hostInfo.processorUsage,
-                            hostInfo.diskCapacity,
-                            hostInfo.RAMUsed,
+                            (int) Math.floor(hostInfo.processorUsage)+ "%",
+                            hostInfo.strDiskCapacity,
+                            hostInfo.strRAMUsed,
                             hostInfo.osVersion,
                             hostInfo.rank,
                             hostInfo.timer
