@@ -263,15 +263,17 @@ public class LauncherV2__2 {
             ByteArrayInputStream inputByteStream = new ByteArrayInputStream(receivedBytes);
             ObjectInputStream inputObjectStream = new ObjectInputStream(inputByteStream);
             HashMap<String, Integer> receivedHashMap = (HashMap<String, Integer>) inputObjectStream.readObject();
+            hostsTimeRegister.put(hostIP, LocalTime.now());
 
+            System.out.println("RECEIVED ONES");
             for (Map.Entry<String, Integer> entry : receivedHashMap.entrySet()) {
 //                String key = entry.getKey();
                 hostsTimeRegister.put(entry.getKey(), LocalTime.now());
+                System.out.println(entry.getKey() + " / " + entry.getValue());
             }
 
 
             hosts.putAll(receivedHashMap);
-
 
 
             //PERA
@@ -285,19 +287,17 @@ public class LauncherV2__2 {
                     highiestRank = entry.getValue();
                     mostUsableHost = entry.getKey();
                 }
-
-                if(entry.getValue() == -1){
-                    hosts.remove(entry.getKey());
-                }
-
-
             }
 
             LocalTime currentTime = LocalTime.now();
             for (Map.Entry<String, LocalTime> entry : hostsTimeRegister.entrySet()) {
-//                String key = entry.getKey();
                 Duration difference = Duration.between(currentTime, entry.getValue()).abs();
-                System.out.println(entry.getKey() + " - " + difference.toSeconds());
+                System.out.println(entry.getKey() + " -> " + difference.toSeconds());
+
+                if(difference.toSeconds() > 7){
+                    hosts.remove(entry.getKey());
+                    hostsTimeRegister.remove(entry.getKey());
+                }
             }
 
             System.out.println("Received hosts info by UDP");
@@ -308,8 +308,6 @@ public class LauncherV2__2 {
             System.out.println(hostsTimeRegister);
             System.out.println();
 
-            hostsTimeRegister.clear();
-
             mostUsableOne.clear();
             mostUsableOne.put(mostUsableHost, highiestRank);
 
@@ -317,36 +315,36 @@ public class LauncherV2__2 {
                 lastOptimalOne.put(mostUsableHost, highiestRank);
             }
 
-//            if(!lastOptimalOne.equals(mostUsableOne)){
-//                lastOptimalOne = mostUsableOne;
-//                System.out.println("LAST OPTIMAL ONE CHANGED");
-//
-//
-//                // Server to Client - WORKS
-////            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
-//                if(!mostUsableOne.equals(localAddressAndRank)){
-//                    System.out.println("Server to Client - USE CASE");
-//                    Thread useCase1 = new Thread(()->{
-//                        System.out.println("USE CASE 1 THREAD LAUNCHED");
-//                        try {
-//                            stopServer();
-//
-//                            // CHANGE - HERE GOES TO INFINITE
-//                            changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
-//                            Thread.sleep(2000);
-//                            synchronized (clientLock){
-//                                clientLock.notifyAll();
-//                            }
-//                        } catch (IOException e) {
-//                            throw new RuntimeException(e);
-//                        } catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                    });
-//                    useCase1.start();
-//
-//                }
-//            }
+            if(!lastOptimalOne.equals(mostUsableOne)){
+                lastOptimalOne = mostUsableOne;
+                System.out.println("LAST OPTIMAL ONE CHANGED");
+
+
+                // Server to Client - WORKS
+//            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
+                if(!mostUsableOne.equals(localAddressAndRank)){
+                    System.out.println("Server to Client - USE CASE");
+                    Thread useCase1 = new Thread(()->{
+                        System.out.println("USE CASE 1 THREAD LAUNCHED");
+                        try {
+                            stopServer();
+
+                            // CHANGE - HERE GOES TO INFINITE
+                            changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+                            Thread.sleep(2000);
+                            synchronized (clientLock){
+                                clientLock.notifyAll();
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    useCase1.start();
+
+                }
+            }
 
             // Client to Server - WORKS
 //            if((clientThread != (null) && clientThread.isAlive()) && mostUsableOne.equals(localAddressAndRank)){
