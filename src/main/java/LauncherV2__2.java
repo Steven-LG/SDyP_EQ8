@@ -250,7 +250,9 @@ public class LauncherV2__2 {
 
         int UDPReceiverPort = UDP_COMMUNICATION_PORT;
         DatagramSocket UDPSocket = new DatagramSocket(UDPReceiverPort);
+
         AtomicBoolean clientToServerDone = new AtomicBoolean(false);
+        AtomicBoolean serverToClientDone = new AtomicBoolean(false);
 
         while(true){
             DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
@@ -338,7 +340,7 @@ public class LauncherV2__2 {
 
                 // Server to Client - WORKS
 //            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
-                if(!mostUsableOne.equals(localAddressAndRank)){
+                if(!serverToClientDone.get() && !mostUsableOne.equals(localAddressAndRank)){
                     clientToServerDone.set(false);
                     System.out.println("Server to Client - USE CASE");
                     Thread useCase1 = new Thread(()->{
@@ -352,6 +354,7 @@ public class LauncherV2__2 {
                             synchronized (clientLock){
                                 clientLock.notifyAll();
                             }
+                            serverToClientDone.set(true);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (InterruptedException e) {
@@ -367,7 +370,7 @@ public class LauncherV2__2 {
 //            if((clientThread != (null) && clientThread.isAlive()) && mostUsableOne.equals(localAddressAndRank)){
             if(!clientToServerDone.get() && mostUsableOne.equals(localAddressAndRank)){
                 System.out.println("CLIENT TO SERVER TRIGGERED");
-
+                serverToClientDone.set(false);
                 Thread useCase2 = new Thread(()->{
                     System.out.println(Thread.currentThread().getName() + " // " + " NEW SERVER");
                     if(clientThread != null){
