@@ -39,7 +39,7 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> hostsInfo;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
-    private static Integer rank = 2;
+    private static Integer rank = 5;
     private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;
@@ -254,6 +254,10 @@ public class LauncherV2__2 {
         AtomicBoolean clientToServerDone = new AtomicBoolean(false);
         AtomicBoolean serverToClientDone = new AtomicBoolean(false);
 
+        AtomicBoolean clientThreadLaunched = new AtomicBoolean(false);
+        AtomicBoolean serverThreadLaunched = new AtomicBoolean(false);
+
+
         while(true){
             DatagramPacket UDPPacket = new DatagramPacket(receiveDataBuffer, receiveDataBuffer.length);
 
@@ -342,19 +346,25 @@ public class LauncherV2__2 {
 //            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
                 if(!serverToClientDone.get() && !mostUsableOne.equals(localAddressAndRank)){
                     clientToServerDone.set(false);
+                    serverThreadLaunched.set(false);
                     System.out.println("Server to Client - USE CASE");
                     Thread useCase1 = new Thread(()->{
                         System.out.println("USE CASE 1 THREAD LAUNCHED");
                         try {
                             stopServer();
 
+
                             // CHANGE - HERE GOES TO INFINITE
-                            changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+                            if(!clientThreadLaunched.get()){
+                                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+                            }
+
                             Thread.sleep(2000);
                             synchronized (clientLock){
                                 clientLock.notifyAll();
                             }
                             serverToClientDone.set(true);
+                            clientThreadLaunched.set(true);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (InterruptedException e) {
@@ -371,6 +381,7 @@ public class LauncherV2__2 {
             if(!clientToServerDone.get() && mostUsableOne.equals(localAddressAndRank)){
                 System.out.println("CLIENT TO SERVER TRIGGERED");
                 serverToClientDone.set(false);
+                clientThreadLaunched.set(false);
                 Thread useCase2 = new Thread(()->{
                     System.out.println(Thread.currentThread().getName() + " // " + " NEW SERVER");
                     if(clientThread != null){
@@ -386,8 +397,10 @@ public class LauncherV2__2 {
                         }
                     }
 
-                    createNewServer();
-                    clientToServerDone.set(true);
+                    if(!serverThreadLaunched.get()){
+                        createNewServer();
+                    }
+
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
@@ -397,6 +410,8 @@ public class LauncherV2__2 {
                         serverLock.notifyAll();
                         System.out.println("SERVER EMITTER UNLOCKED SERVER");
                     }
+                    clientToServerDone.set(true);
+                    serverThreadLaunched.set(true);
                 });
                 useCase2.start();
             }
