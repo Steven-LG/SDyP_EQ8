@@ -3,6 +3,10 @@ import visuals.DynamicTable;
 
 import java.io.*;
 import java.net.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,12 +40,14 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> hostsInfo;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
-    private static Integer rank = 10;
+    private static Integer rank = 5;
     private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;
     private static HashMap<String, Integer> mostUsableOne = new HashMap<>();
     private static HashMap<String, Integer> lastOptimalOne = new HashMap<>();
+
+    private static HashMap<String, LocalTime> hostsTimeRegister = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException, IOException {
         hosts = new ConcurrentHashMap<>();
@@ -82,18 +88,19 @@ public class LauncherV2__2 {
         });
         UDPListenerThread.start();
 
-        serverThread = new Thread(()->{
-            while(true){
-                try {
-                    startServer();
-                } catch (IOException e) {
-                    System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
-                }
-                if(Thread.currentThread().isInterrupted()){
-                    break;
-                }
-            }
-        });
+        serverThread = serverThreadSingleton.getInstance();
+//        serverThread = new Thread(()->{
+//            while(true){
+//                try {
+//                    startServer();
+//                } catch (IOException e) {
+//                    System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
+//                }
+//                if(Thread.currentThread().isInterrupted()){
+//                    break;
+//                }
+//            }
+//        });
 //        serverThread.start();
 
         Thread serverStartEmitter = new Thread(()->{
@@ -150,7 +157,7 @@ public class LauncherV2__2 {
                 clientLock.notifyAll();
             }
         });
-        startClientEmitter.start();
+//        startClientEmitter.start();
 
         Thread changeToServerListenerThread = new Thread(()->{
             try {
@@ -214,7 +221,9 @@ public class LauncherV2__2 {
             ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
             ObjectOutputStream outputObjectStream = new ObjectOutputStream(outputByteStream);
 
-            outputObjectStream.writeObject(new HashMap<>(hosts));
+            HashMap<String, Integer> localhostHashMap = new HashMap<>();
+            localhostHashMap.put(hostIP, rank);
+            outputObjectStream.writeObject(localhostHashMap);
             outputObjectStream.flush();
             byte[] dataToSend = outputByteStream.toByteArray();
 
@@ -255,7 +264,17 @@ public class LauncherV2__2 {
             ObjectInputStream inputObjectStream = new ObjectInputStream(inputByteStream);
             HashMap<String, Integer> receivedHashMap = (HashMap<String, Integer>) inputObjectStream.readObject();
 
+            for (Map.Entry<String, Integer> entry : receivedHashMap.entrySet()) {
+//                String key = entry.getKey();
+                hostsTimeRegister.put(entry.getKey(), LocalTime.now());
+            }
+
+
             hosts.putAll(receivedHashMap);
+
+
+
+            //PERA
 
             ArrayList<Map.Entry<String, Integer>> entryList = hashMapToArrayList(hosts);
 
@@ -270,11 +289,26 @@ public class LauncherV2__2 {
                 if(entry.getValue() == -1){
                     hosts.remove(entry.getKey());
                 }
+
+
+            }
+
+            LocalTime currentTime = LocalTime.now();
+            for (Map.Entry<String, LocalTime> entry : hostsTimeRegister.entrySet()) {
+//                String key = entry.getKey();
+                Duration difference = Duration.between(currentTime, entry.getValue()).abs();
+                System.out.println(entry.getKey() + " - " + difference.toSeconds());
             }
 
             System.out.println("Received hosts info by UDP");
             System.out.println(hosts);
             System.out.println();
+
+            System.out.println("REGISTER OF HASHMAPS");
+            System.out.println(hostsTimeRegister);
+            System.out.println();
+
+            hostsTimeRegister.clear();
 
             mostUsableOne.clear();
             mostUsableOne.put(mostUsableHost, highiestRank);
@@ -283,69 +317,74 @@ public class LauncherV2__2 {
                 lastOptimalOne.put(mostUsableHost, highiestRank);
             }
 
-            if(!lastOptimalOne.equals(mostUsableOne)){
-                lastOptimalOne = mostUsableOne;
-                System.out.println("LAST OPTIMAL ONE CHANGED");
-            }
-
-            // Server to Client - WORKS
-//            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
-            if(!mostUsableOne.equals(localAddressAndRank)){
-                stopServer();
-
-                // CHANGE
-                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
-                Thread.sleep(2000);
-                synchronized (clientLock){
-                    clientLock.notifyAll();
-                }
-            }
+//            if(!lastOptimalOne.equals(mostUsableOne)){
+//                lastOptimalOne = mostUsableOne;
+//                System.out.println("LAST OPTIMAL ONE CHANGED");
+//
+//
+//                // Server to Client - WORKS
+////            if(serverThread.isAlive() && !mostUsableOne.equals(localAddressAndRank)){
+//                if(!mostUsableOne.equals(localAddressAndRank)){
+//                    System.out.println("Server to Client - USE CASE");
+//                    Thread useCase1 = new Thread(()->{
+//                        System.out.println("USE CASE 1 THREAD LAUNCHED");
+//                        try {
+//                            stopServer();
+//
+//                            // CHANGE - HERE GOES TO INFINITE
+//                            changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
+//                            Thread.sleep(2000);
+//                            synchronized (clientLock){
+//                                clientLock.notifyAll();
+//                            }
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        } catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    });
+//                    useCase1.start();
+//
+//                }
+//            }
 
             // Client to Server - WORKS
-//            if((clientThread.isAlive() && !clientThread.equals(null)) && mostUsableOne.equals(localAddressAndRank)){
-            if(mostUsableOne.equals(localAddressAndRank)){
-                System.out.println("CLIENT TO SERVER TRIGGERED");
+//            if((clientThread != (null) && clientThread.isAlive()) && mostUsableOne.equals(localAddressAndRank)){
+////            if(mostUsableOne.equals(localAddressAndRank)){
+//                System.out.println("CLIENT TO SERVER TRIGGERED");
+//
+//                Thread useCase2 = new Thread(()->{
+//                    System.out.println(Thread.currentThread().getName() + " // " + " NEW SERVER");
+//                    if(clientThread != null){
+//                        clientThread.interrupt();
+//                    }
+//
+//                    if((cSocket != null) && cSocket.isConnected()){
+//                        try {
+//                            clientObjectOutputStream.close();
+//                            cSocket.close();
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    }
+//
+//                    createNewServer();
+//                    try {
+//                        Thread.sleep(500);
+//                    } catch (InterruptedException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    synchronized (serverLock){
+//                        serverLock.notifyAll();
+//                        System.out.println("SERVER EMITTER UNLOCKED SERVER");
+//                    }
+//                });
+//                useCase2.start();
+//            }
 
-                if(clientThread != null){
-                    clientThread.interrupt();
-                }
-                if((cSocket != null) && cSocket.isConnected()){
-                    clientObjectOutputStream.close();
-                    cSocket.close();
-                }
-
-                createNewServer();
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                synchronized (serverLock){
-                    serverLock.notifyAll();
-                    System.out.println("SERVER EMITTER UNLOCKED SERVER");
-                }
-            }
-
-            // Redirection as a Client from Server A to Server B - WORKS
-            if(clientThread.isAlive() && !lastOptimalOne.equals(mostUsableOne)){
-//            if(!lastOptimalOne.equals(mostUsableOne)){
-                System.out.println("CHANGE SERVER AS A CLIENT DONE");
-
-                clientThread.interrupt();
-                if(cSocket.isConnected()){
-                    clientObjectOutputStream.close();
-                    cSocket.close();
-                }
-                System.out.println("NEW SERVER BOUT TO BE LAUNCHED");
-                Thread.sleep(2000);
-
-                // CHANGE HERE
-                changeClientSocket(InetAddress.getByName(mostUsableOne.keySet().iterator().next()), SERVER_PORT);
-//                changeClientSocket(InetAddress.getByName("localhost"), 5556);
-
-            }
         }
     }
+
     public static ArrayList<Map.Entry<String, Integer>> hashMapToArrayList(ConcurrentHashMap<String, Integer> receivedHashMap){
         // HashMap sorting
         ArrayList<Map.Entry<String, Integer>> entryList = new ArrayList<>(receivedHashMap.entrySet());
@@ -512,13 +551,7 @@ public class LauncherV2__2 {
         }
     }
     public static void createNewServer(){
-        Thread newServer = new Thread(()->{
-            try {
-                startServer();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        Thread newServer = serverThreadSingleton.getInstance();
         newServer.start();
     }
     public static void stopServer() throws IOException {
@@ -552,35 +585,85 @@ public class LauncherV2__2 {
         clientObjectOutputStream = new ObjectOutputStream(cSocket.getOutputStream());
 
         System.out.println("CLIENT SOCKET CHANGED DONE");
-        clientThread = new Thread(()->{
+
+        clientThread = clientThreadSingleton.getInstance();
+        clientThread.start();
+    }
+    private static class serverThreadSingleton extends Thread{
+        private static final ThreadLocal<serverThreadSingleton> threadLocalInstance = new ThreadLocal<>();
+        private serverThreadSingleton(){}
+        public static serverThreadSingleton getInstance(){
+            if(threadLocalInstance.get() == null){
+                threadLocalInstance.set(new serverThreadSingleton());
+            }
+            return threadLocalInstance.get();
+        }
+
+        @Override
+        public void run() {
+            while(true){
+                try {
+                    startServer();
+                } catch (IOException e) {
+                    System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
+                }
+                if(Thread.currentThread().isInterrupted()){
+                    break;
+                }
+            }
+        }
+    }
+    private static class clientThreadSingleton extends Thread{
+        private static final ThreadLocal<clientThreadSingleton> threadLocalInstance = new ThreadLocal<>();
+        private clientThreadSingleton(){}
+        public static clientThreadSingleton getInstance(){
+            if(threadLocalInstance.get() == null){
+                threadLocalInstance.set(new clientThreadSingleton());
+            }
+            return threadLocalInstance.get();
+        }
+        @Override
+        public void run() {
             try {
                 makeConstantRequests();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             } catch (InterruptedException e) {
 //                throw new RuntimeException(e);
                 System.out.println(Thread.currentThread().getName()+" - "+e.getMessage().toUpperCase());
             }
-        });
-        clientThread.start();
-
-
+        }
     }
-    static synchronized void makeConstantRequests() throws IOException, InterruptedException {
+
+    static synchronized void makeConstantRequests() throws InterruptedException {
         while(true){
             if(Thread.currentThread().isInterrupted()){
                 System.out.println("CLIENT THREAD WERE INTERRUPTED");
                 break;
             }
 
-            HostSpecs clientMessage = new HostSpecs();
-            clientMessage.getCurrentUsage();
+            HostSpecs clientMessage = null;
+            try {
+                clientMessage = new HostSpecs();
+                clientMessage.getCurrentUsage();
 
-            clientObjectOutputStream.writeObject(clientMessage);
-            System.out.println("Object sent");
-            clientObjectOutputStream.flush();
-            Thread.sleep(1000);
+                clientObjectOutputStream.writeObject(clientMessage);
+                System.out.println("Object sent");
+                clientObjectOutputStream.flush();
+                Thread.sleep(1000);
+
+            } catch (UnknownHostException e) {
+                System.out.println("makeConstantRequests - UnknownHostException");
+                System.out.println(Thread.currentThread().getName() + " - " + e.getMessage().toUpperCase());
+                break;
+
+            } catch (IOException e) {
+                System.out.println("makeConstantRequests - IOException");
+                System.out.println(Thread.currentThread().getName() + " - " + e.getMessage().toUpperCase());
+
+
+                // REDIRECTION TO MOST USABLE NOW
+
+                break;
+            }
         }
     }
-
 }
