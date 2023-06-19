@@ -39,7 +39,7 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> hostsInfo;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
-    private static Integer rank = 5;
+    private static Integer rank = 0;
     private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;

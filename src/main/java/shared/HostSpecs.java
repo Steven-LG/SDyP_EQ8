@@ -67,7 +67,9 @@ public class HostSpecs implements Serializable {
         HWDiskStore[] diskStores = hardware.getDiskStores().toArray(new HWDiskStore[0]);
         diskCapacity = diskStores.length > 0 ? diskStores[0].getSize() : 0;
 
-        strDiskCapacity = String.valueOf(diskCapacity) + " B";
+        strDiskCapacity = String.valueOf(diskCapacity);
+        int endIndex = strDiskCapacity.length() - 6; // Calculate the index to end the substring
+        strDiskCapacity = strDiskCapacity.substring(0, endIndex) + " MB";
     }
     public void getCurrentUsage() throws UnknownHostException {
         ipAddress = InetAddress.getLocalHost().getHostAddress();
@@ -102,7 +104,9 @@ public class HostSpecs implements Serializable {
         totalRAM = memory.getTotal();
         availableRAM = memory.getAvailable();
         RAMUsed = totalRAM - availableRAM;
-        strRAMUsed = String.valueOf(RAMUsed) + " B";
+        strRAMUsed = String.valueOf(RAMUsed);
+        int endIndex = strRAMUsed.length() - 6; // Calculate the index to end the substring
+        strRAMUsed = strRAMUsed.substring(0, endIndex) + " MB";
         rank = getRank();
         timer = new Date(System.currentTimeMillis());
     }
