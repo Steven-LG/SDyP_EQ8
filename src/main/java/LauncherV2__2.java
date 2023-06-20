@@ -39,7 +39,7 @@ public class LauncherV2__2 {
     private static HashMap<String, Integer> hostsInfo;
     private static HashMap<String, Integer> localAddressAndRank = new HashMap<>();
     private static String hostIP;
-    private static Integer rank = 2;
+    private static Integer rank;
     private static ConcurrentHashMap<String, Integer> hosts;
 
     private static final int UDP_COMMUNICATION_PORT = 1234;
@@ -51,6 +51,7 @@ public class LauncherV2__2 {
     public static void main(String[] args) throws InterruptedException, IOException {
         hosts = new ConcurrentHashMap<>();
         serverHostSpecs = new HostSpecs();
+        rank = serverHostSpecs.rank;
         hostsInfo = new HashMap<String, Integer>(){};
         hostIP = InetAddress.getLocalHost().getHostAddress();
         localAddressAndRank.put(hostIP, rank);
